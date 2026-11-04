@@ -42,7 +42,7 @@ int main() {
   assert(search("FOX").size() == 2);
   assert(search("FO*").size() == 2);
   assert(search("fo*")[0].second > 0.0);
-  // assert(trie.searchPrefix("fo").size() == 2);
+  assert(trie.searchPrefix("fo").size() == 2);
   assert(search("don't").size() == 1);
   assert(search("test-*").size() == 1);
   assert(search("12*").size() == 1);
