@@ -208,18 +208,6 @@ make clean
 This project builds on a university group search engine developed by
 Brandon Ho, Duy Do and Zixi Khoo.
 
-The original contribution records describe:
-
-- **Brandon Ho** — initial searcher prototypes, prefix searching and
-  query processing/ranking work.
-- **Duy Do** — Boolean operations, phrase-search changes and integration
-  fixes.
-- **Zixi Khoo** — inverted indexing, word positions, normalisation,
-  snippets and contributions to the CLI.
-
 Project Search Engine continues that foundation as a portfolio project.
 Subsequent maintenance and feature development are recorded in the
 repository history.
-
-Original repository:
-https://github.com/BrandonHo419/mini-search-engine
