@@ -1,0 +1,2 @@
+The quick brown fox jumps over the lazy dog. Fox is not a dog.
+This file contains the quick search phrase.

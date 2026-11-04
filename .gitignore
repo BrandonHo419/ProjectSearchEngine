@@ -1,0 +1,7 @@
+*.exe
+*.o
+*.d
+/search
+/a.out
+/tests/search-tests
+/tests/tmp/
