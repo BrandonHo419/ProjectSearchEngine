@@ -1,4 +1,5 @@
 # Project Search Engine
+[![Build and regression tests](https://github.com/BrandonHo419/Project-Search-Engine/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/BrandonHo419/Project-Search-Engine/actions/workflows/build-and-test.yml)
 
 A C++17 search engine for local text files, with an interactive command-line interface.
 

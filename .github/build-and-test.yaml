@@ -1,0 +1,60 @@
+name: Build and regression tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows — GCC UCRT64
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install Windows compiler
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: mingw-w64-ucrt-x86_64-gcc
+
+      - name: Build application
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -pedantic \
+            main.cpp Index.cpp -o search.exe
+
+      - name: Build regression tests
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -pedantic -I. \
+            tests/search_tests.cpp Index.cpp \
+            -o tests/search-tests.exe
+
+      - name: Run regression tests
+        run: ./tests/search-tests.exe
+
+      - name: Check CLI exits when input ends
+        timeout-minutes: 1
+        run: printf 'fox\n' | ./search.exe
+
+  linux:
+    name: Linux — GCC
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Build and run regression tests
+        run: make test
