@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
 
   // IMPORTANT: These files must exist in the same directory for indexing to
   // work.
-  std::vector<std::string> files = {"testfile1.txt", "testfile2.txt",
-                                    "testfile3.txt", "extreme secret.txt"};
+  std::vector<std::string> files = {"data/sample/testfile1.txt", "data/sample/testfile2.txt",
+                                    "data/sample/testfile3.txt", "data/sample/extreme secret.txt"};
 
   if (argc > 1) files.assign(argv + 1, argv + argc);
 

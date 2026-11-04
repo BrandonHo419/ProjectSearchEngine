@@ -26,7 +26,7 @@ The engine builds an inverted index containing word frequencies and positions. I
 ### Build
 
 ```bash
-git clone https://github.com/BrandonHo419/Project-Search-Engine.git
+git clone https://github.com/BrandonHo419/ProjectSearchEngine.git
 cd Project-Search-Engine
 make
 ```
