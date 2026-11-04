@@ -1,104 +1,72 @@
-#ifndef PREFIX_SEARCHER_HPP 
+#ifndef PREFIX_SEARCHER_HPP
 #define PREFIX_SEARCHER_HPP
 
-#include <algorithm>
+#include <cctype>
+#include <map>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-using namespace std;
-constexpr int ALPHABET_SIZE = 26;
-
-int charToIndex(char c) { return c - 'a'; }
-
-struct TrieNode {
-  TrieNode* children[ALPHABET_SIZE];
-  bool isEndOfWord;
-  vector<pair<string, int>> postings;
-
-  TrieNode() : isEndOfWord(false) {
-    fill(children, children + ALPHABET_SIZE, nullptr);
-  }
-
-  ~TrieNode() {
-    for (int i = 0; i < ALPHABET_SIZE; ++i) {
-      if (children[i]) delete children[i];
-    }
-  }
-};
-
+// Map edges support digits, apostrophes and hyphens without array indexing.
 class PrefixSearcher {
 private:
-  TrieNode* root;
+  struct TrieNode {
+    std::map<unsigned char, std::unique_ptr<TrieNode>> children;
+    std::vector<std::pair<std::string, int>> postings;
+  };
+  TrieNode root;
 
-  void suggestionsRec(TrieNode* node, string currPrefix,
-                      vector<string>& suggestions) const { // MARKED CONST
-    if (node->isEndOfWord) suggestions.push_back(currPrefix);
-    for (int i = 0; i < ALPHABET_SIZE; i++) {
-      if (node->children[i])
-        suggestionsRec(node->children[i], currPrefix + char('a' + i),
-                       suggestions);
+  const TrieNode* findPrefix(const std::string& prefix) const {
+    const TrieNode* node = &root;
+    for (unsigned char c : prefix) {
+      auto it = node->children.find(static_cast<unsigned char>(std::tolower(c)));
+      if (it == node->children.end()) return nullptr;
+      node = it->second.get();
+    }
+    return node;
+  }
+
+  void collectWords(const TrieNode& node, const std::string& prefix,
+                    std::vector<std::string>& words) const {
+    if (!node.postings.empty()) words.push_back(prefix);
+    for (const auto& [character, child] : node.children) {
+      collectWords(*child, prefix + static_cast<char>(character), words);
     }
   }
 
-  void collectPostingsRec(TrieNode* node, vector<pair<string, int>>& postings) const { // MARKED CONST
-    if (node->isEndOfWord)
-      postings.insert(postings.end(), node->postings.begin(),
-                      node->postings.end());
-    for (int i = 0; i < ALPHABET_SIZE; i++) {
-      if (node->children[i]) collectPostingsRec(node->children[i], postings);
-    }
-  }
-
-  bool isLastNode(TrieNode* node) const { // MARKED CONST
-    for (int i = 0; i < ALPHABET_SIZE; i++) {
-      if (node->children[i]) return false;
-    }
-    return true;
+  void collectPostings(const TrieNode& node, std::map<std::string, int>& totals) const {
+    for (const auto& [document, frequency] : node.postings) totals[document] += frequency;
+    for (const auto& [character, child] : node.children) collectPostings(*child, totals);
   }
 
 public:
-  PrefixSearcher() { root = new TrieNode; }
-  ~PrefixSearcher() { delete root; }
-
-  void insert(const string& key, const pair<string, int>& posting) {
-    TrieNode* pCrawl = root;
-    for (char c : key) {
-      int index = charToIndex(c);
-      if (!pCrawl->children[index]) pCrawl->children[index] = new TrieNode();
-      pCrawl = pCrawl->children[index];
+  void insert(const std::string& key, const std::pair<std::string, int>& posting) {
+    if (key.empty()) return;
+    TrieNode* node = &root;
+    for (unsigned char c : key) {
+      auto& child = node->children[static_cast<unsigned char>(std::tolower(c))];
+      if (!child) child = std::make_unique<TrieNode>();
+      node = child.get();
     }
-    pCrawl->isEndOfWord = true;
-    pCrawl->postings.push_back(posting);
+    node->postings.push_back(posting);
   }
 
-  vector<string> getSuggestions(const string& prefix) const { // MARKED CONST
-    TrieNode* pCrawl = root;
-    for (char c : prefix) {
-      int index = charToIndex(c);
-      if (!pCrawl->children[index]) return {};
-      pCrawl = pCrawl->children[index];
-    }
-    vector<string> suggestions;
-    if (isLastNode(pCrawl)) {
-      if (pCrawl->isEndOfWord) suggestions.push_back(prefix);
-      return suggestions;
-    }
-    suggestionsRec(pCrawl, prefix, suggestions);
-    return suggestions;
+  std::vector<std::string> getSuggestions(std::string prefix) const {
+    const TrieNode* node = findPrefix(prefix);
+    if (!node) return {};
+    for (char& c : prefix) c = std::tolower(static_cast<unsigned char>(c));
+    std::vector<std::string> words;
+    collectWords(*node, prefix, words);
+    return words;
   }
 
-  vector<pair<string, int>> searchPrefix(string& prefix) const { // MARKED CONST
-    TrieNode* pCrawl = root;
-    for (char c : prefix) {
-      int index = charToIndex(c);
-      if (!pCrawl->children[index]) return {};
-      pCrawl = pCrawl->children[index];
-    }
-    vector<pair<string, int>> postings;
-    collectPostingsRec(pCrawl, postings);
-    sort(postings.begin(), postings.end());
-    return postings;
+  std::vector<std::pair<std::string, int>> searchPrefix(const std::string& prefix) const {
+    const TrieNode* node = findPrefix(prefix);
+    if (!node) return {};
+    std::map<std::string, int> totals;
+    collectPostings(*node, totals);
+    return {totals.begin(), totals.end()};
   }
 };
-
 #endif
