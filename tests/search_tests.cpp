@@ -49,6 +49,92 @@ int main() {
   const double expected = 2.0 / 8.0 * (std::log(5.0 / 3.0) + 1.0);
   assert(std::abs(search("fox")[0].second - expected) < 1e-10);
   assert(!index.getSnippet(a, "\"\"").empty());
+  auto detailed = processQueryDetailed("FO*", index, trie, 10);
+  assert(detailed.size() == 2);
+  assert(detailed[0].document == a);
+  assert(detailed[0].matches.size() == 2);
+  assert(detailed[0].matches[0].term == "fox");
+  assert(detailed[0].matches[0].frequency == 2);
+  assert((detailed[0].matches[0].positions == std::vector<int>{2, 3}));
+  assert(detailed[0].matches[1].term == "foxes");
+  assert(detailed[0].matches[1].frequency == 1);
+  assert(!detailed[0].isPhrase);
+  assert(index.getSnippetFromSpans(a, detailed[0].spans) ==
+         "quick brown fox fox foxes don't test-case ...");
+  assert(trie.searchPrefix("fo")[0].second == 3);
+
+  detailed = processQueryDetailed("fox - dog", index, trie, 10);
+  assert(detailed.size() == 1);
+  assert(detailed[0].matches.size() == 1);
+  assert(detailed[0].matches[0].term == "fox");
+  detailed = processQueryDetailed("123 OR dog", index, trie, 10);
+  for (const auto& result : detailed) {
+    assert(result.matches.size() == 1);
+    assert(result.matches[0].frequency > 0);
+    assert(result.matches[0].term == (result.document == a ? "123" : "dog"));
+  }
+  const auto once = processQueryDetailed("fox", index, trie, 10);
+  const auto twice = processQueryDetailed("fox FOX", index, trie, 10);
+  assert(twice[0].matches.size() == 1);
+  assert(twice[0].matches[0].frequency == 2);
+  assert(std::abs(twice[0].score - 2 * once[0].score) < 1e-10);
+
+  detailed = processQueryDetailed("\"quick brown fox\"", index, trie, 10);
+  assert(detailed.size() == 1);
+  assert(detailed[0].isPhrase && detailed[0].phraseOccurrences == 1);
+  assert(detailed[0].spans.size() == 1);
+  assert(detailed[0].spans[0].start == 0 && detailed[0].spans[0].end == 3);
+  assert(detailed[0].matches[1].term == "fox" && detailed[0].matches[1].frequency == 2);
+  assert(index.getSnippetFromSpans(a, detailed[0].spans, 0) == "quick brown fox ...");
+  assert(processQueryDetailed("fox OR", index, trie, 10).empty());
+  assert(processQueryDetailed("fox", index, trie, 0).empty());
+  assert(index.getSnippetFromSpans(a, {}).empty());
+  assert(index.getSnippetFromSpans("missing", {{0, 1}}).empty());
+  assert(index.getSnippetFromSpans(a, {{-1, 1}, {2, 2}, {0, 100}}).empty());
+
+  // A phrase at the end must win over isolated occurrences near the start.
+  const std::string edges = "tests/tmp/edges.txt";
+  std::ofstream(edges) << "quick filler filler filler filler brown filler filler filler "
+                          "fox filler filler filler filler quick brown fox";
+  Indexer edgeIndex;
+  edgeIndex.buildIndex({edges});
+  PrefixSearcher edgeTrie;
+  for (const auto& [word, postings] : edgeIndex.getIndex())
+    for (const auto& [doc, data] : postings) edgeTrie.insert(word, {doc, data.first});
+  auto phraseResult = processQueryDetailed("\"quick brown fox\"", edgeIndex, edgeTrie, 10);
+  assert(phraseResult[0].phraseOccurrences == 1);
+  assert(edgeIndex.getSnippetFromSpans(edges, phraseResult[0].spans, 0) ==
+         "... quick brown fox");
+  auto prefixResult = processQueryDetailed("qu*", edgeIndex, edgeTrie, 10);
+  assert(edgeIndex.getSnippetFromSpans(edges, prefixResult[0].spans, 0) ==
+         "quick ... quick ...");
+
+  std::ofstream(edges) << "a a a";
+  edgeIndex.buildIndex({edges});
+  phraseResult = processQueryDetailed("\"a a\"", edgeIndex, edgeTrie, 10);
+  assert(phraseResult[0].phraseOccurrences == 2);
+  assert(phraseResult[0].matches.size() == 1 && phraseResult[0].matches[0].frequency == 3);
+  assert(edgeIndex.getSnippetFromSpans(edges, phraseResult[0].spans, 0) == "a a a");
+  assert(edgeIndex.getSnippetFromSpans(edges, {{0, 3}}, -1) == "a a a");
+  assert(edgeIndex.getSnippetFromSpans(edges, {{0, 3}}, 2, 0).empty());
+
+  std::ofstream(edges) << "one two three four five six seven eight nine ten";
+  edgeIndex.buildIndex({edges});
+  const std::vector<MatchSpan> separated = {{9, 10}, {6, 7}, {3, 4}, {0, 1}};
+  assert(edgeIndex.getSnippetFromSpans(edges, separated, 0) ==
+         "one ... four ... seven ...");
+  assert(edgeIndex.getSnippetFromSpans(edges, separated, 0, 4) ==
+         "one ... four ... seven ... ten");
+  assert(edgeIndex.getSnippetFromSpans(edges, {{1, 2}, {2, 3}, {1, 2}}, 0) ==
+         "... two three ...");
+  // A complete long phrase remains intact even with zero context.
+  phraseResult = processQueryDetailed("\"one two three four five six seven eight nine ten\"",
+                                     edgeIndex, edgeTrie, 10);
+  assert(edgeIndex.getSnippetFromSpans(edges, phraseResult[0].spans, 0) ==
+         "one two three four five six seven eight nine ten");
+  assert(edgeIndex.getSnippetFromSpans(edges, {{0, 1}}, 2147483647) ==
+         "one two three four five six seven eight nine ten");
+
   index.buildIndex({c});
   assert(index.getTotalDoc() == 1);
   assert(index.searchWord("fox").empty());

@@ -173,3 +173,46 @@ std::string Indexer::getSnippet(const std::string& filename, const std::string& 
 }
 
 
+
+
+std::string Indexer::getSnippetFromSpans(const std::string& filename,
+    const std::vector<MatchSpan>& spans, int window, int maxExcerpts) const {
+    const auto content = docContent.find(filename);
+    if (content == docContent.end() || spans.empty() || maxExcerpts <= 0) return "";
+    window = std::max(0, window);
+    std::vector<std::string> words;
+    std::istringstream input(content->second);
+    std::string word;
+    while (input >> word) words.push_back(word);
+    const int length = static_cast<int>(words.size());
+    std::vector<MatchSpan> windows;
+    for (const auto& span : spans) {
+        if (span.start < 0 || span.end <= span.start || span.end > length) continue;
+        // Expand complete phrase spans, so context limits cannot split a phrase.
+        windows.push_back({span.start - std::min(span.start, window),
+                           span.end + std::min(length - span.end, window)});
+    }
+    std::sort(windows.begin(), windows.end(), [](const auto& a, const auto& b) {
+        return a.start < b.start;
+    });
+    std::vector<MatchSpan> merged;
+    for (const auto& candidate : windows) {
+        if (!merged.empty() && candidate.start <= merged.back().end) {
+            merged.back().end = std::max(merged.back().end, candidate.end);
+        } else {
+            merged.push_back(candidate);
+        }
+    }
+    std::string snippet;
+    const auto count = std::min(merged.size(), static_cast<std::size_t>(maxExcerpts));
+    for (std::size_t i = 0; i < count; ++i) {
+        if (i > 0) snippet += " ... ";
+        else if (merged[i].start > 0) snippet += "... ";
+        for (int position = merged[i].start; position < merged[i].end; ++position) {
+            if (position > merged[i].start) snippet += " ";
+            snippet += words[position];
+        }
+    }
+    if (count > 0 && merged[count - 1].end < length) snippet += " ...";
+    return snippet;
+}

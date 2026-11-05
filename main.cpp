@@ -1,26 +1,12 @@
 #include <algorithm>
 #include <cctype>
 #include <iostream>
-#include <sstream>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "Index.h"
 #include "PrefixSearcher.hpp"
 #include "query_processor.hpp"
-
-// Utility function to normalize a word (duplicate from Index.cpp for local use)
-std::string normalizeWord(const std::string& word) {
-  std::string clean = "";
-  for (size_t i = 0; i < word.size(); i++) {
-    unsigned char c = static_cast<unsigned char>(word[i]);
-    if (!std::ispunct(c) || c == '-' || c == '\'') {
-      clean += std::tolower(c);
-    }
-  }
-  return clean;
-}
 
 void displaySuggestions(const std::string& prefix,
                         const PrefixSearcher& prefixSearcher) {
@@ -83,15 +69,15 @@ int main(int argc, char* argv[]) {
     }
 
     // Process the query using the combined logic
-    auto results = processQuery(query, indexer, prefixSearcher, 10);
+    auto results = processQueryDetailed(query, indexer, prefixSearcher, 10);
 
     if (results.empty()) {
       std::cout << "No results found.\n";
     } else {
       std::cout << "\nSearch results (ranked):\n";
       for (size_t i = 0; i < results.size(); ++i) {
-        const std::string& doc = results[i].first;
-        double score = results[i].second;
+        const std::string& doc = results[i].document;
+        double score = results[i].score;
 
         // Use .count() and .at() for safer map access
         int totalWords =
@@ -101,40 +87,14 @@ int main(int argc, char* argv[]) {
                   << " | Total words: " << totalWords << "\n";
 
         // Print snippet
-        std::cout << "   Snippet: " << indexer.getSnippet(doc, query) << "\n";
+        std::cout << "   Snippet: " << indexer.getSnippetFromSpans(doc, results[i].spans) << "\n";
 
-        // Print word frequencies (matches)
-        std::cout << "   Matches: ";
-        std::istringstream iss(query);
-        std::string word_token;
-
-        std::unordered_set<std::string> seen_terms;
-
-        while (iss >> word_token) {
-          if (word_token == "AND" || word_token == "OR" || word_token == "-")
-            continue;
-
-          std::string clean_word = word_token;
-          // Pre-clean for normalization logic
-          if (clean_word.front() == '"' && clean_word.back() == '"')
-            clean_word = clean_word.substr(1, clean_word.size() - 2);
-          if (!clean_word.empty() && clean_word.back() == '*') clean_word.pop_back();
-
-          // Tokenize the (potentially cleaned) word/phrase to handle multi-word
-          // inputs
-          std::istringstream twiss(clean_word);
-          std::string token;
-          while (twiss >> token) {
-            std::string normalized_token = normalizeWord(token);
-
-            if (!normalized_token.empty() &&
-                seen_terms.find(normalized_token) == seen_terms.end()) {
-              auto postings = indexer.searchWord(normalized_token);
-              int freq = postings.count(doc) ? postings.at(doc).first : 0;
-              std::cout << normalized_token << "(" << freq << ") ";
-              seen_terms.insert(normalized_token);
-            }
-          }
+        std::cout << "   Matched terms (occurrences in document): ";
+        for (const auto& match : results[i].matches) {
+          std::cout << match.term << ": " << match.frequency << " ";
+        }
+        if (results[i].isPhrase) {
+          std::cout << "| Phrase occurrences: " << results[i].phraseOccurrences;
         }
         std::cout << "\n";
       }

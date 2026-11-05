@@ -1,5 +1,5 @@
 # Project Search Engine
-[![Build and regression tests](https://github.com/BrandonHo419/Project-Search-Engine/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/BrandonHo419/Project-Search-Engine/actions/workflows/build-and-test.yml)
+[![Build and regression tests](https://github.com/BrandonHo419/ProjectSearchEngine/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/BrandonHo419/ProjectSearchEngine/actions/workflows/build-and-test.yaml)
 
 A C++17 search engine for local text files, with an interactive command-line interface.
 
@@ -28,8 +28,25 @@ The engine builds an inverted index containing word frequencies and positions. I
 
 ```bash
 git clone https://github.com/BrandonHo419/ProjectSearchEngine.git
-cd Project-Search-Engine
+cd ProjectSearchEngine
 make
+```
+
+### Native Windows (MSYS2 UCRT64)
+
+In the MSYS2 UCRT64 terminal, install GCC if needed:
+
+```bash
+pacman -S --needed mingw-w64-ucrt-x86_64-gcc
+```
+
+From the repository root, build and test with the same commands used by Windows CI:
+
+```bash
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic main.cpp Index.cpp -o search.exe
+g++ -std=c++17 -O2 -Wall -Wextra -pedantic -I. tests/search_tests.cpp Index.cpp -o tests/search-tests.exe
+./tests/search-tests.exe
+./search.exe
 ```
 
 ### Run with the sample documents
@@ -84,7 +101,9 @@ With the bundled sample documents, `"quick brown fox"` matches
 - Prefix searches support a single prefix followed by `*`.
 - Parentheses and combinations of phrase/prefix searches with Boolean
   expressions are currently unsupported.
-- Malformed or unsupported queries currently return no results.
+- Some malformed queries return no results; validation is incomplete.
+  Parentheses can be stripped as punctuation and embedded quotes can be
+  interpreted as part of a single phrase. Explicit query errors are planned.
 
 ### Repeatable demonstration
 
@@ -141,6 +160,26 @@ descending score, with document path used to break ties.
 
 The CLI displays up to ten results.
 
+### Result explanations
+
+`processQueryDetailed()` returns each document's score, matched terms with
+whole-document occurrence counts and positions, and matching spans.
+`processQuery()` preserves the original document/score interface.
+
+The CLI only displays positive terms actually present in a result. Prefixes
+expand to their matched words: `fo*` against `fox fox foxes` reports
+`fox: 2 foxes: 1`. Terms are displayed alphabetically and repeated query
+terms are explained once, while their existing ranking contribution remains.
+
+Phrase results separately report complete phrase occurrences, including
+overlapping occurrences. For example, `"a a"` against `a a a` reports
+`a: 3` and `Phrase occurrences: 2`.
+
+Snippets use matching token positions, with two context words on each side.
+Phrase snippets use complete phrase spans rather than isolated constituent
+words. Overlapping or adjacent windows merge; up to three excerpts are shown.
+Ellipses indicate omitted text, including later excerpts beyond the limit.
+
 ## Repository structure
 
 | File | Responsibility |
@@ -152,8 +191,8 @@ The CLI displays up to ten results.
 | `query_processor.hpp` | Query interpretation and ranking. |
 | `makefile` | Build, test and clean targets. |
 | `tests/search_tests.cpp` | Search regression checks. |
-| `testfile*.txt` | Sample documents. |
-| `extreme secret.txt` | Additional synthetic sample document. |
+| `data/sample/testfile*.txt` | Sample documents. |
+| `data/sample/extreme secret.txt` | Additional synthetic sample document. |
 
 ## Testing
 
@@ -172,6 +211,9 @@ The checks cover:
 - Empty and malformed queries.
 - Result limits.
 - TF-IDF calculations.
+- Expanded prefix counts, positive-only explanations and repeated terms.
+- Phrase occurrences, overlapping phrases and document-edge snippets.
+- Merged snippet windows, excerpt limits and invalid snippet spans.
 - Repeated document indexing and rebuilding the index.
 - CLI completion when redirected input ends.
 
@@ -188,18 +230,17 @@ make clean
 - Supported input is plain text.
 - Full Unicode linguistic processing and stemming are unimplemented.
 - Phrase and prefix expressions cannot be combined with Boolean queries.
-- Snippets are approximate context windows.
-- Prefix snippets can fall back to the beginning of the document.
-- The CLI's match counts use literal query tokens rather than expanded
-  prefix matches.
+- Snippets use indexed tokens, so original whitespace is not preserved.
+- At most three merged excerpts are shown, in document order. Adjacent
+  matches can merge into a long excerpt; there is no character limit.
+- The legacy `getSnippet(filename, query)` helper remains available for
+  compatibility; the CLI uses match spans through `getSnippetFromSpans`.
 - The application currently runs locally.
 
 ## Planned improvements
 
-- Organise sample data and add directory input.
+- Add directory input and a non-interactive query option.
 - Improve query validation and error messages.
-- Improve snippets and prefix match counts.
-- Automate builds and regression tests.
 - Add reproducible performance benchmarks.
 - Create an interactive browser demonstration.
 

@@ -85,7 +85,7 @@ public:
     return result;
   }
 // keep positions that extend the complete phrase matched so far, and check if the next word's position is exactly one more than any of those positions
-  vector<pair<string, int>> searchPhrase(const string& query, const Indexer& index) {
+  unordered_map<string, vector<int>> searchPhrasePositions(const string& query, const Indexer& index) {
     auto tokens = tokenize(query);
     if (tokens.empty()) return {};
 
@@ -128,6 +128,19 @@ public:
       result = phraseResult;
       currentPostings = nextPostings; // CRITICAL: Update to the postings of the word we just matched against
     }
+    unordered_map<string, vector<int>> positions;
+    for (const auto& [document, frequency] : result) {
+      positions.emplace(document, currentPostings.at(document).second);
+    }
+    return positions;
+  }
+
+  vector<pair<string, int>> searchPhrase(const string& query, const Indexer& index) {
+    vector<pair<string, int>> result;
+    for (const auto& [document, ends] : searchPhrasePositions(query, index)) {
+      result.emplace_back(document, ends.size());
+    }
+    sort(result.begin(), result.end());
     return result;
   }
 };
