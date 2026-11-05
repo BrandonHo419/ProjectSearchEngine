@@ -13,7 +13,8 @@ The engine builds an inverted index containing word frequencies and positions. I
 - Trie-based prefix searches and word suggestions.
 - TF-IDF ranking with deterministic ordering for tied scores.
 - Results containing document paths, scores, word counts and snippets.
-- Support for text files supplied through command-line arguments.
+- Individual text files or non-recursive directory input.
+- Interactive searches or one query per invocation with documented exit codes.
 - Regression tests for core search behaviour.
 
 ## Getting started
@@ -68,10 +69,59 @@ Supply one or more text-file paths:
 ./search notes.txt article.txt "project notes.txt"
 ```
 
-Paths containing spaces must be quoted.
+You can also use explicit file and directory options, and run one query:
 
-Unreadable files are reported and skipped. If no documents can be loaded,
-the program exits with an error.
+```bash
+./search --help
+./search --file "project notes.txt"
+./search --directory "my notes"
+./search --directory "my notes" --query "fox OR dog"
+./search --query "fo*"
+```
+
+On native Windows, use `./search.exe` in place of `./search`.
+Paths and queries containing spaces must be quoted. Quote wildcards too so
+that the shell does not expand them. Query-language double quotes for phrases
+must reach the executable intact; shell quoting varies by terminal.
+
+### Input and command-line rules
+
+- `--file PATH`, `--directory PATH` and positional files can be combined and
+  repeated. Each value option consumes its next argument literally.
+- Directories contribute immediate regular files with a case-insensitive `.txt`
+  extension, in sorted path order. Subdirectories and symbolic-link entries
+  are skipped. Explicit directory paths may resolve through symbolic links.
+- Explicit files may have any extension and may be symbolic links to regular
+  files. Their contents must still be plain text.
+- Canonical path duplicates (including `.` aliases and resolved file symlinks)
+  are indexed once. The first supplied/discovered spelling is displayed.
+  Distinct hard-link paths are not deduplicated. Canonical spelling follows
+  the platform filesystem; this is not Unicode or case-folded path matching.
+- Empty readable files count as documents, contribute to the existing IDF
+  calculation, and never match a search.
+- Missing, unreadable and non-regular inputs are reported and skipped. Other
+  valid inputs remain searchable. Directory traversal errors are reported;
+  files discovered before an error may still be used.
+- With no input paths, the bundled samples are loaded relative to the current
+  working directory. Explicit inputs never fall back to the samples.
+- `--query QUERY` may appear once. It runs one search and exits without reading
+  standard input or displaying an interactive prompt. In this mode `x` and
+  `:help` are search text, not interactive commands. Blank queries are errors.
+- `--help` prints command-line and query help without accessing input files.
+  Arguments must still be syntactically valid.
+- `--` ends option parsing: all following arguments are literal file paths.
+  For example, `./search --query fox -- --notes.txt` searches an option-looking
+  filename. Unknown `--options` and missing option values are errors.
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | Completed successfully, including a valid search with no matches or help. |
+| `1` | No documents could be loaded. |
+| `2` | Invalid command-line arguments or invalid single-query syntax. |
+
+If some inputs fail but at least one document loads, valid searches still
+return `0`. Loading is checked before single-query syntax, so no loaded
+documents produces `1` even if the query is also invalid.
 
 Enter `:help` for query examples or `x` to quit. Blank lines are ignored.
 The program also exits when standard input ends.
@@ -244,6 +294,10 @@ The checks cover:
 - Digits, apostrophes and hyphens in trie searches.
 - Empty and malformed queries, error categories and useful explanations.
 - CLI help, recovery after errors, no-result messages and EOF handling.
+- Directory filtering, paths containing spaces, canonical duplicate paths and
+  mixed inputs.
+- Single-query execution, option errors, exit codes and sample fallback rules.
+- Symlink exclusion and explicit file aliases where symlink creation is permitted.
 - Result limits.
 - TF-IDF calculations.
 - Expanded prefix counts, positive-only explanations and repeated terms.
@@ -261,7 +315,9 @@ make clean
 ## Current limitations
 
 - The index is rebuilt in memory on each run.
-- Files must be supplied individually.
+- Directory scans are non-recursive; only `.txt` files are discovered.
+- Command-line file paths use the platform narrow-character encoding; full
+  Unicode path support on Windows is not guaranteed.
 - Supported input is plain text.
 - Full Unicode linguistic processing and stemming are unimplemented.
 - Phrase and prefix expressions cannot be combined with Boolean queries.
@@ -274,7 +330,6 @@ make clean
 
 ## Planned improvements
 
-- Add directory input and a non-interactive query option.
 - Add reproducible performance benchmarks.
 - Create an interactive browser demonstration.
 

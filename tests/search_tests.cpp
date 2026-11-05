@@ -5,6 +5,9 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
 #include "query_processor.hpp"
 
 
@@ -228,7 +231,8 @@ int main() {
   assert(index.searchWord("fox").empty());
   // Exercise prompt recovery and diagnostic routing through the real CLI on both platforms.
   std::ofstream("tests/tmp/cli-doc.txt") << "fox fox foxes quick brown fox AND help";
-  const auto runCli = [](const std::string& input) {
+  const auto runCommand = [](const std::string& arguments, const std::string& input,
+                             int expectedStatus = 0) {
     std::ofstream("tests/tmp/cli-input.txt") << input;
 #ifdef _WIN32
     const std::string executable = ".\\search.exe";
@@ -236,12 +240,20 @@ int main() {
     const std::string executable = "./search";
 #endif
     const std::string command = executable +
-        " tests/tmp/cli-doc.txt < tests/tmp/cli-input.txt > tests/tmp/cli-output.txt 2>&1";
+        " " + arguments + " < tests/tmp/cli-input.txt > tests/tmp/cli-output.txt 2>&1";
     const int status = std::system(command.c_str());
-    assert(status == 0);
+#ifdef _WIN32
+    assert(status == expectedStatus);
+#else
+    assert(status != -1 && WIFEXITED(status));
+    assert(WEXITSTATUS(status) == expectedStatus);
+#endif
     std::ifstream output("tests/tmp/cli-output.txt");
     assert(output);
     return std::string(std::istreambuf_iterator<char>(output), std::istreambuf_iterator<char>());
+  };
+  const auto runCli = [&](const std::string& input) {
+    return runCommand("tests/tmp/cli-doc.txt", input);
   };
   const auto invalidOutput = runCli("\n :help \n*\nfox AND\n\"fox\n");
   assert(invalidOutput.find("Query help:") != std::string::npos);
@@ -263,6 +275,129 @@ int main() {
   assert(literalOutput.find("and: 1") != std::string::npos);
   assert(literalOutput.find("Query help:") == std::string::npos);
   assert(literalOutput.find("Invalid query:") == std::string::npos);
+
+  // Options are exercised through the executable so argument parsing, discovery,
+  // status codes and the shared result formatter are covered together.
+  const auto helpOutput = runCommand("--help --directory tests/tmp/missing", "fox\n");
+  assert(helpOutput.find("Usage: search") != std::string::npos);
+  assert(helpOutput.find("Query help:") != std::string::npos);
+  assert(helpOutput.find("Index built") == std::string::npos);
+  assert(helpOutput.find("Cannot scan") == std::string::npos);
+  for (const std::string args : {"--file", "--directory", "--query", "--unknown",
+                               "--query fox --query dog"}) {
+    const auto output = runCommand(args, "", 2);
+    assert(output.find("Use --help") != std::string::npos);
+    assert(output.find("Index built") == std::string::npos);
+  }
+  const std::string explicitFile = "--file tests/tmp/cli-doc.txt";
+  const auto singleOutput = runCommand(explicitFile + " --query fox", "AND fox\n");
+  assert(singleOutput.find("fox: 3") != std::string::npos);
+  assert(singleOutput.find("Enter search query") == std::string::npos);
+  assert(singleOutput.find("Goodbye!") == std::string::npos);
+  assert(singleOutput.find("Invalid query:") == std::string::npos);
+  assert(singleOutput == runCommand("tests/tmp/cli-doc.txt --query fox", ""));
+  assert(runCommand(explicitFile + " --query unfindableterm", "").find("No results found.") !=
+         std::string::npos);
+  for (const std::string query : {"fox AND", "   ", ""}) {
+    assert(runCommand(explicitFile + " --query \"" + query + "\"", "", 2)
+               .find("Invalid query:") != std::string::npos);
+  }
+  assert(runCommand(explicitFile + " --query \" fo* \"", "")
+             .find("Suggestions: fox foxes") != std::string::npos);
+  assert(runCommand(explicitFile + " --query \"fox - dog\"", "")
+             .find("fox: 3") != std::string::npos);
+  assert(runCommand(explicitFile + " --query x", "").find("No results found.") !=
+         std::string::npos);
+  assert(runCommand(explicitFile + " --query :help", "").find("help: 1") !=
+         std::string::npos);
+  // Preserve the exact same result block as interactive mode.
+  const auto interactiveFox = runCli("fox\nx\n");
+  const std::string resultHeader = "Search results (ranked):";
+  assert(interactiveFox.find(singleOutput.substr(singleOutput.find(resultHeader))) !=
+         std::string::npos);
+  assert(runCommand("--query fox", "").find("testfile1.txt") != std::string::npos);
+  assert(runCommand("", "fox\nx\n").find("testfile1.txt") != std::string::npos);
+
+  fs::create_directories("tests/tmp/folder with spaces/nested");
+  fs::create_directories("tests/tmp/empty directory");
+  std::ofstream("tests/tmp/folder with spaces/first file.txt") << "foldertoken";
+  std::ofstream("tests/tmp/folder with spaces/second.TXT") << "foldertoken";
+  std::ofstream("tests/tmp/folder with spaces/ignored.md") << "excludedtoken";
+  std::ofstream("tests/tmp/folder with spaces/nested/hidden.txt") << "excludedtoken";
+  std::ofstream("tests/tmp/folder with spaces/empty.txt");
+  const std::string directory = "--directory \"tests/tmp/folder with spaces\"";
+  const auto folderOutput = runCommand(directory + " --query foldertoken", "");
+  assert(folderOutput.find("first file.txt") < folderOutput.find("second.TXT"));
+  assert(folderOutput.find("second.TXT") != std::string::npos);
+  assert(folderOutput.find("empty.txt") == std::string::npos);
+  assert(runCommand(directory + " --query excludedtoken", "").find("No results found.") !=
+         std::string::npos);
+  assert(runCommand("--file \"tests/tmp/folder with spaces/ignored.md\" --query excludedtoken", "")
+             .find("excludedtoken: 1") != std::string::npos);
+  // Aliases must neither duplicate results nor change IDF by inflating document count.
+  assert(singleOutput == runCommand(explicitFile +
+      " tests/tmp/./cli-doc.txt --file tests/tmp/cli-doc.txt --query fox", ""));
+  assert(folderOutput == runCommand(directory + " " + directory +
+      " --file \"tests/tmp/folder with spaces/./first file.txt\" --query foldertoken", ""));
+  const auto mixed = runCommand(explicitFile + " " + directory + " --query foldertoken", "");
+  assert(mixed.find("first file.txt") != std::string::npos);
+  assert(mixed.find("second.TXT") != std::string::npos);
+  assert(runCommand("--file tests/tmp/empty.txt --query fox", "")
+             .find("No results found.") != std::string::npos);
+  for (const std::string args : {"--file tests/tmp/missing", "--file tests/tmp",
+                               "--directory tests/tmp/missing",
+                               "--directory tests/tmp/a.txt",
+                               "--directory \"tests/tmp/empty directory\"", "--file \"\""}) {
+    const auto output = runCommand(args + " --query fox", "", 1);
+    assert(output.find("No documents could be loaded") != std::string::npos);
+    assert(output.find("testfile1.txt") == std::string::npos);
+  }
+  const auto partial = runCommand("--file tests/tmp/missing " + explicitFile + " --query fox", "");
+  assert(partial.find("Cannot use file") != std::string::npos);
+  assert(partial.find("fox: 3") != std::string::npos);
+  assert(runCommand("--query fox -- tests/tmp/cli-doc.txt", "") == singleOutput);
+  // An option-looking basename remains searchable after the option terminator.
+  const auto oldDirectory = fs::current_path();
+  const auto cliPath = fs::absolute(
+#ifdef _WIN32
+      "search.exe"
+#else
+      "search"
+#endif
+  );
+  fs::create_directories("tests/tmp/option-path/tests/tmp");
+  std::ofstream("tests/tmp/option-path/--help") << "literalpath";
+  fs::copy_file(cliPath, "tests/tmp/option-path/" + cliPath.filename().string(),
+                fs::copy_options::overwrite_existing);
+  fs::current_path("tests/tmp/option-path");
+  const auto literalPath = runCommand("--query literalpath -- --help", "");
+  assert(literalPath.find("literalpath: 1") != std::string::npos);
+  fs::current_path(oldDirectory);
+
+  // Windows may require developer mode or administrator privileges for symlinks.
+  std::error_code linkError;
+  fs::create_symlink(fs::absolute("tests/tmp/cli-doc.txt"),
+                     "tests/tmp/folder with spaces/link.txt", linkError);
+  if (!linkError) {
+    assert(runCommand(directory + " --query fox", "").find("No results found.") !=
+           std::string::npos);
+    assert(singleOutput == runCommand(explicitFile +
+        " --file \"tests/tmp/folder with spaces/link.txt\" --query fox", ""));
+  } else {
+    std::cout << "Symlink checks skipped: " << linkError.message() << "\n";
+  }
+
+  std::error_code directoryLinkError;
+  fs::create_directory_symlink(fs::absolute("tests/tmp/folder with spaces"),
+                               "tests/tmp/directory-link", directoryLinkError);
+  if (!directoryLinkError) {
+    assert(runCommand("--directory tests/tmp/directory-link --query foldertoken", "")
+               .find("foldertoken: 1") != std::string::npos);
+    assert(folderOutput == runCommand(directory +
+        " --directory tests/tmp/directory-link --query foldertoken", ""));
+  } else {
+    std::cout << "Directory symlink checks skipped: " << directoryLinkError.message() << "\n";
+  }
 
   fs::remove_all("tests/tmp");
   std::cout << "Search regression checks passed.\n";
