@@ -73,7 +73,8 @@ Paths containing spaces must be quoted.
 Unreadable files are reported and skipped. If no documents can be loaded,
 the program exits with an error.
 
-Enter `x` to quit. The program also exits when standard input ends.
+Enter `:help` for query examples or `x` to quit. Blank lines are ignored.
+The program also exits when standard input ends.
 
 ## Search examples
 
@@ -101,9 +102,34 @@ With the bundled sample documents, `"quick brown fox"` matches
 - Prefix searches support a single prefix followed by `*`.
 - Parentheses and combinations of phrase/prefix searches with Boolean
   expressions are currently unsupported.
-- Some malformed queries return no results; validation is incomplete.
-  Parentheses can be stripped as punctuation and embedded quotes can be
-  interpreted as part of a single phrase. Explicit query errors are planned.
+- Invalid syntax produces an `Invalid query:` explanation. A valid query
+  with no matching documents produces `No results found.`
+- Lowercase `and` and `or` are ordinary terms. Quote reserved operator
+  words to search them literally, e.g. `"AND"`.
+- `fox -dog` searches the literal hyphenated term `-dog`; it is not exclusion.
+- Empty phrases, punctuation-only terms, unmatched or embedded double quotes,
+  and unsupported wildcard placement are rejected. Quotes have no escape syntax.
+- Parentheses outside phrases are rejected. Inside a quoted phrase they are
+  ordinary punctuation handled by the existing normalisation rules.
+
+The supported forms are a sequence of terms with optional `AND`, `OR` or `-`
+operators between terms; one complete quoted phrase; or one standalone prefix
+with a trailing `*`. Adjacent terms imply `AND`. For example,
+`123 OR dog AND fox` means `(123 OR dog) AND fox`; the parentheses here explain
+evaluation and cannot be entered as query syntax.
+
+| Input | Response |
+| --- | --- |
+| `fox AND` | Missing search term after `AND`. |
+| `"quick brown` | Unmatched double quote. |
+| `*fox`, `fo**` | Invalid prefix wildcard placement. |
+| `fox OR do*` | Mixed prefix expressions are unsupported. |
+| `"quick" "brown fox"` | Use one quoted phrase as the entire query. |
+| `unfindableterm` | Valid search; no results if the term is absent. |
+| `:help` | Show help at the interactive prompt. |
+
+Errors return to the prompt so the query can be corrected. Invalid prefix
+queries do not produce suggestions. `help` remains an ordinary search term.
 
 ### Repeatable demonstration
 
@@ -164,7 +190,14 @@ The CLI displays up to ten results.
 
 `processQueryDetailed()` returns each document's score, matched terms with
 whole-document occurrence counts and positions, and matching spans.
-`processQuery()` preserves the original document/score interface.
+`executeQuery()` returns a `QueryResponse` containing results, a `QueryError`
+code and an explanatory message. `ok()` distinguishes valid empty results
+from invalid syntax. Validation still occurs when the result limit is zero
+or negative; valid queries with those limits return no results.
+
+`processQueryDetailed()` and `processQuery()` preserve their vector return
+types for compatibility, returning empty vectors for invalid input. Use
+`executeQuery()` when diagnostics are needed.
 
 The CLI only displays positive terms actually present in a result. Prefixes
 expand to their matched words: `fo*` against `fox fox foxes` reports
@@ -196,7 +229,8 @@ Ellipses indicate omitted text, including later excerpts beyond the limit.
 
 ## Testing
 
-Build the application and run the regression checks:
+Build the application and run the regression checks from the repository root:
+The tests also launch the built CLI with redirected input.
 
 ```bash
 make test
@@ -208,7 +242,8 @@ The checks cover:
 - Boolean operator placement.
 - Prefix aggregation.
 - Digits, apostrophes and hyphens in trie searches.
-- Empty and malformed queries.
+- Empty and malformed queries, error categories and useful explanations.
+- CLI help, recovery after errors, no-result messages and EOF handling.
 - Result limits.
 - TF-IDF calculations.
 - Expanded prefix counts, positive-only explanations and repeated terms.
@@ -240,7 +275,6 @@ make clean
 ## Planned improvements
 
 - Add directory input and a non-interactive query option.
-- Improve query validation and error messages.
 - Add reproducible performance benchmarks.
 - Create an interactive browser demonstration.
 

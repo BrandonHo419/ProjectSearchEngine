@@ -24,6 +24,24 @@ void displaySuggestions(const std::string& prefix,
   }
 }
 
+void displayQueryHelp() {
+  std::cout << R"(Query help:
+  fox                  Single term (case-insensitive)
+  quick brown          Both terms (implicit AND)
+  fox AND dog          Both terms
+  fox OR secret        Either term
+  fox - dog            Exclude dog; separate '-' with spaces
+  "quick brown fox"    One complete phrase
+  fo*                  One prefix followed by '*'
+
+Boolean operators must be uppercase and are evaluated left to right.
+Lowercase 'and' and 'or' are ordinary search terms.
+Parentheses and mixed phrase/prefix expressions are unsupported.
+Use a quoted phrase to search literal operator words, e.g. "AND".
+Enter :help for this help, x to quit, or a query to continue.
+)";
+}
+
 int main(int argc, char* argv[]) {
   std::cout << "=== Mini Search Engine CLI ===\n";
 
@@ -53,23 +71,31 @@ int main(int argc, char* argv[]) {
   std::cout << "Index built successfully!\n";
 
   while (true) {
-    std::cout << "\nEnter search query (press 'x' to quit): ";
+    std::cout << "\nEnter search query (:help for help, x to quit): ";
     std::string query;
     if (!std::getline(std::cin, query)) break;
-    const auto first = query.find_first_not_of(" \t\r\n");
+    const auto first = query.find_first_not_of(" \t\r\n\v\f");
     if (first == std::string::npos) continue;
-    query = query.substr(first, query.find_last_not_of(" \t\r\n") - first + 1);
+    query = query.substr(first, query.find_last_not_of(" \t\r\n\v\f") - first + 1);
 
     if (query == "x") break;
-    if (query.empty()) continue;
+    if (query == ":help") {
+      displayQueryHelp();
+      continue;
+    }
 
-    // Display suggestions if it's a prefix query
+    auto response = executeQuery(query, indexer, prefixSearcher, 10);
+    if (!response.ok()) {
+      std::cout << "Invalid query: " << response.message << " Type :help for examples.\n";
+      continue;
+    }
+
+    // Only valid prefix queries reach suggestion expansion.
     if (query.back() == '*' && !(query.front() == '"' && query.back() == '"')) {
       displaySuggestions(query, prefixSearcher);
     }
 
-    // Process the query using the combined logic
-    auto results = processQueryDetailed(query, indexer, prefixSearcher, 10);
+    const auto& results = response.results;
 
     if (results.empty()) {
       std::cout << "No results found.\n";

@@ -1,8 +1,10 @@
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include "query_processor.hpp"
 
 
@@ -92,6 +94,92 @@ int main() {
   assert(index.getSnippetFromSpans("missing", {{0, 1}}).empty());
   assert(index.getSnippetFromSpans(a, {{-1, 1}, {2, 2}, {0, 100}}).empty());
 
+  struct InvalidQueryCase {
+    std::string query;
+    QueryError error;
+    std::string explanation;
+  };
+  const std::vector<InvalidQueryCase> invalidQueries = {
+      {"", QueryError::EmptyQuery, "Enter a search term"},
+      {" \t\r\n\v\f", QueryError::EmptyQuery, "Enter a search term"},
+      {"\"\"", QueryError::EmptyPhrase, "phrase is empty"},
+      {"\"   \t\"", QueryError::EmptyPhrase, "phrase is empty"},
+      {"\"fox", QueryError::UnmatchedQuote, "double quote"},
+      {"fox\"", QueryError::UnmatchedQuote, "double quote"},
+      {"\"fox\"\"", QueryError::UnmatchedQuote, "double quote"},
+      {"\"fox\" dog", QueryError::UnsupportedExpression, "entire query"},
+      {"fox \"dog\"", QueryError::UnsupportedExpression, "entire query"},
+      {"\"quick\" \"brown fox\"", QueryError::UnsupportedExpression, "entire query"},
+      {"\"fox\" OR dog", QueryError::UnsupportedExpression, "entire query"},
+      {"\"fox\"*", QueryError::UnsupportedExpression, "entire query"},
+      {"(fox)", QueryError::UnsupportedExpression, "Parentheses"},
+      {"fox OR (dog AND 123)", QueryError::UnsupportedExpression, "left to right"},
+      {"fox)", QueryError::UnsupportedExpression, "Parentheses"},
+      {"*", QueryError::InvalidWildcard, "prefix"},
+      {"*fox", QueryError::InvalidWildcard, "prefix"},
+      {"f*ox", QueryError::InvalidWildcard, "prefix"},
+      {"fo**", QueryError::InvalidWildcard, "prefix"},
+      {"fo* dog", QueryError::InvalidWildcard, "cannot be combined"},
+      {"fox OR do*", QueryError::InvalidWildcard, "cannot be combined"},
+      {"fox\tdo*", QueryError::InvalidWildcard, "cannot be combined"},
+      {"fox\vdo*", QueryError::InvalidWildcard, "cannot be combined"},
+      {"\"fo*\"", QueryError::InvalidWildcard, "inside phrases"},
+      {"AND fox", QueryError::MissingOperand, "before operator 'AND'"},
+      {"OR fox", QueryError::MissingOperand, "before operator 'OR'"},
+      {"- fox", QueryError::MissingOperand, "before operator '-'"},
+      {"fox AND", QueryError::MissingOperand, "after operator 'AND'"},
+      {"fox OR", QueryError::MissingOperand, "after operator 'OR'"},
+      {"fox -", QueryError::MissingOperand, "after operator '-'"},
+      {"fox AND OR dog", QueryError::MissingOperand, "before operator 'OR'"},
+      {"fox - - dog", QueryError::MissingOperand, "before operator '-'"},
+      {"!!!", QueryError::EmptyTerm, "searchable characters"},
+      {"fox OR !!!", QueryError::EmptyTerm, "searchable characters"},
+      {"\"quick !!! fox\"", QueryError::EmptyTerm, "phrase term"},
+      {"!!!*", QueryError::EmptyTerm, "prefix"},
+  };
+  for (const auto& test : invalidQueries) {
+    const auto response = executeQuery(test.query, index, trie, 10);
+    assert(!response.ok());
+    assert(response.error == test.error);
+    assert(response.results.empty());
+    assert(response.message.find(test.explanation) != std::string::npos);
+    assert(processQueryDetailed(test.query, index, trie, 10).empty());
+    assert(search(test.query).empty());
+  }
+  // A well-formed search with no matches is successful, with no diagnostic.
+  for (const std::string query : {"unfindableterm", "unfindable*", "\"unfindable phrase\""}) {
+    const auto response = executeQuery(query, index, trie, 10);
+    assert(response.ok() && response.results.empty() && response.message.empty());
+  }
+  for (const std::string query : {"fox", "FO*", "don't", "test-*", "12*",
+                                 "\"quick brown fox\"", "fox OR dog", "fox - dog"}) {
+    const auto response = executeQuery(query, index, trie, 10);
+    assert(response.ok() && !response.results.empty() && response.message.empty());
+  }
+  assert(executeQuery("\v FOX \f", index, trie, 10).results.size() == 2);
+  assert(executeQuery("fox\tdog", index, trie, 10).results.size() == 1);
+  assert(executeQuery("quick, brown", index, trie, 10).results.size() == 2);
+  assert(executeQuery("\"quick (brown) fox\"", index, trie, 10).results.size() == 1);
+  // Do not silently add operator precedence or treat lowercase operators as keywords.
+  auto leftToRight = executeQuery("123 OR dog AND fox", index, trie, 10);
+  assert(leftToRight.ok() && leftToRight.results.size() == 2);
+  assert(executeQuery("fox and dog", index, trie, 10).ok());
+  assert(executeQuery("fox and dog", index, trie, 10).results.empty());
+  assert(executeQuery("fox -dog", index, trie, 10).ok());
+  assert(executeQuery("fox -dog", index, trie, 10).results.empty());
+  assert(executeQuery("help", index, trie, 10).ok());
+  for (int limit : {0, -1}) {
+    const auto response = executeQuery("fox", index, trie, limit);
+    assert(response.ok() && response.results.empty());
+    assert(executeQuery("fox AND", index, trie, limit).error == QueryError::MissingOperand);
+  }
+  assert(executeQuery("fox", index, trie, 1).results.size() == 1);
+  Indexer noDocuments;
+  PrefixSearcher noTerms;
+  assert(executeQuery("fox", noDocuments, noTerms, 10).ok());
+  assert(executeQuery("fox", noDocuments, noTerms, 10).results.empty());
+  assert(executeQuery("fox OR", noDocuments, noTerms, 10).error == QueryError::MissingOperand);
+
   // A phrase at the end must win over isolated occurrences near the start.
   const std::string edges = "tests/tmp/edges.txt";
   std::ofstream(edges) << "quick filler filler filler filler brown filler filler filler "
@@ -138,6 +226,44 @@ int main() {
   index.buildIndex({c});
   assert(index.getTotalDoc() == 1);
   assert(index.searchWord("fox").empty());
+  // Exercise prompt recovery and diagnostic routing through the real CLI on both platforms.
+  std::ofstream("tests/tmp/cli-doc.txt") << "fox fox foxes quick brown fox AND help";
+  const auto runCli = [](const std::string& input) {
+    std::ofstream("tests/tmp/cli-input.txt") << input;
+#ifdef _WIN32
+    const std::string executable = ".\\search.exe";
+#else
+    const std::string executable = "./search";
+#endif
+    const std::string command = executable +
+        " tests/tmp/cli-doc.txt < tests/tmp/cli-input.txt > tests/tmp/cli-output.txt 2>&1";
+    const int status = std::system(command.c_str());
+    assert(status == 0);
+    std::ifstream output("tests/tmp/cli-output.txt");
+    assert(output);
+    return std::string(std::istreambuf_iterator<char>(output), std::istreambuf_iterator<char>());
+  };
+  const auto invalidOutput = runCli("\n :help \n*\nfox AND\n\"fox\n");
+  assert(invalidOutput.find("Query help:") != std::string::npos);
+  assert(invalidOutput.find("left to right") != std::string::npos);
+  assert(invalidOutput.find("Invalid query:") != std::string::npos);
+  assert(invalidOutput.find("Missing search term after operator 'AND'") != std::string::npos);
+  assert(invalidOutput.find("Unmatched double quote") != std::string::npos);
+  assert(invalidOutput.find("No results found.") == std::string::npos);
+  assert(invalidOutput.find("Suggestions:") == std::string::npos);
+  assert(invalidOutput.find("Goodbye!") != std::string::npos);
+  const auto validOutput = runCli("unfindableterm\nfo*\n\"quick brown fox\"\nx\nAND fox\n");
+  assert(validOutput.find("No results found.") != std::string::npos);
+  assert(validOutput.find("Suggestions: fox foxes") != std::string::npos);
+  assert(validOutput.find("fox: 3 foxes: 1") != std::string::npos);
+  assert(validOutput.find("Phrase occurrences: 1") != std::string::npos);
+  assert(validOutput.find("Invalid query:") == std::string::npos);
+  const auto literalOutput = runCli("help\n\"AND\"\n");
+  assert(literalOutput.find("help: 1") != std::string::npos);
+  assert(literalOutput.find("and: 1") != std::string::npos);
+  assert(literalOutput.find("Query help:") == std::string::npos);
+  assert(literalOutput.find("Invalid query:") == std::string::npos);
+
   fs::remove_all("tests/tmp");
   std::cout << "Search regression checks passed.\n";
 }
