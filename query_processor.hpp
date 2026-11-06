@@ -42,6 +42,8 @@ struct QueryResponse {
   std::vector<SearchResult> results;
   QueryError error = QueryError::None;
   std::string message;
+  // Valid prefix expansions are reusable by any presentation layer.
+  std::vector<std::string> suggestions = {};
 
   bool ok() const { return error == QueryError::None; }
 };
@@ -149,7 +151,9 @@ inline QueryResponse executeQuery(
   }
 
   // A result limit is an output option, not query syntax. Still validate when it is zero.
-  if (topK <= 0) return {};
+  QueryResponse response;
+  if (prefix) response.suggestions = scoringTerms;
+  if (topK <= 0) return response;
 
   // Smoothed per-term TF-IDF avoids integer division and zero-only rankings.
   std::vector<SearchResult> ranked;
@@ -193,7 +197,8 @@ inline QueryResponse executeQuery(
     return a.document < b.document;
   });
   if (ranked.size() > static_cast<std::size_t>(topK)) ranked.resize(topK);
-  return {std::move(ranked), QueryError::None, ""};
+  response.results = std::move(ranked);
+  return response;
 }
 
 // Compatibility callers retain vector results; use executeQuery() for diagnostics.

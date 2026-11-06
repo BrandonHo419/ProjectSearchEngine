@@ -241,13 +241,34 @@ The CLI displays up to ten results.
 `processQueryDetailed()` returns each document's score, matched terms with
 whole-document occurrence counts and positions, and matching spans.
 `executeQuery()` returns a `QueryResponse` containing results, a `QueryError`
-code and an explanatory message. `ok()` distinguishes valid empty results
+code, an explanatory message and prefix suggestions. `ok()` distinguishes valid empty results
 from invalid syntax. Validation still occurs when the result limit is zero
 or negative; valid queries with those limits return no results.
 
 `processQueryDetailed()` and `processQuery()` preserve their vector return
 types for compatibility, returning empty vectors for invalid input. Use
 `executeQuery()` when diagnostics are needed.
+
+`QueryResponse::suggestions` contains the alphabetically ordered indexed words
+expanded by a valid prefix query. Invalid queries, non-prefix queries and
+prefixes with no matching vocabulary return an empty list. Suggestions are
+independent of the document result limit, including zero or negative limits.
+The CLI displays this list directly; it does not reinterpret prefix syntax or
+repeat the trie lookup.
+
+### Engine and presentation responsibilities
+
+- `executeQuery()` owns query validation, matching, ranking, explanations and
+  prefix suggestions. It returns data without printing query output.
+- `Indexer::getSnippetFromSpans()` turns engine match spans into snippet text.
+- `main.cpp` owns file discovery, interactive commands, exit codes and output
+  formatting. Both interactive and single-query modes use the same renderer.
+
+A future interface can consume the same query response and snippet helper.
+File loading and trie construction remain the caller's responsibility; there
+is no browser adapter or in-memory document-loading API yet.
+
+### Explanation details
 
 The CLI only displays positive terms actually present in a result. Prefixes
 expand to their matched words: `fo*` against `fox fox foxes` reports
@@ -298,7 +319,7 @@ The checks cover:
   mixed inputs.
 - Single-query execution, option errors, exit codes and sample fallback rules.
 - Symlink exclusion and explicit file aliases where symlink creation is permitted.
-- Result limits.
+- Result limits and engine-provided prefix suggestions independent of those limits.
 - TF-IDF calculations.
 - Expanded prefix counts, positive-only explanations and repeated terms.
 - Phrase occurrences, overlapping phrases and document-edge snippets.

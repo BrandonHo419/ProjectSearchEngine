@@ -145,6 +145,7 @@ int main() {
     assert(!response.ok());
     assert(response.error == test.error);
     assert(response.results.empty());
+    assert(response.suggestions.empty());
     assert(response.message.find(test.explanation) != std::string::npos);
     assert(processQueryDetailed(test.query, index, trie, 10).empty());
     assert(search(test.query).empty());
@@ -159,6 +160,25 @@ int main() {
     const auto response = executeQuery(query, index, trie, 10);
     assert(response.ok() && !response.results.empty() && response.message.empty());
   }
+  // A caller can show prefix expansions without interpreting the query itself.
+  for (int limit : {10, 1, 0, -1}) {
+    const auto response = executeQuery(" \tFO* \n", index, trie, limit);
+    assert(response.ok());
+    assert((response.suggestions == std::vector<std::string>{"fox", "foxes"}));
+    assert(response.results.size() == (limit > 1 ? 2u : limit == 1 ? 1u : 0u));
+    assert(executeQuery("fo**", index, trie, limit).suggestions.empty());
+  }
+  assert((executeQuery("12*", index, trie, 10).suggestions ==
+          std::vector<std::string>{"123"}));
+  assert((executeQuery("test-*", index, trie, 10).suggestions ==
+          std::vector<std::string>{"test-case"}));
+  for (const std::string query : {"fox", "fox OR dog", "fox - dog",
+                                 "\"quick brown fox\"", "unfindable*"}) {
+    assert(executeQuery(query, index, trie, 10).suggestions.empty());
+  }
+  // Existing three-field aggregate construction remains valid.
+  const QueryResponse legacyResponse{{}, QueryError::None, ""};
+  assert(legacyResponse.ok() && legacyResponse.suggestions.empty());
   assert(executeQuery("\v FOX \f", index, trie, 10).results.size() == 2);
   assert(executeQuery("fox\tdog", index, trie, 10).results.size() == 1);
   assert(executeQuery("quick, brown", index, trie, 10).results.size() == 2);
@@ -181,6 +201,7 @@ int main() {
   PrefixSearcher noTerms;
   assert(executeQuery("fox", noDocuments, noTerms, 10).ok());
   assert(executeQuery("fox", noDocuments, noTerms, 10).results.empty());
+  assert(executeQuery("fo*", noDocuments, noTerms, 10).suggestions.empty());
   assert(executeQuery("fox OR", noDocuments, noTerms, 10).error == QueryError::MissingOperand);
 
   // A phrase at the end must win over isolated occurrences near the start.

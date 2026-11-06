@@ -10,13 +10,7 @@
 #include "PrefixSearcher.hpp"
 #include "query_processor.hpp"
 
-void displaySuggestions(const std::string& prefix,
-                        const PrefixSearcher& prefixSearcher) {
-  // Note: getSuggestions expects a prefix without the '*'
-  std::string clean_prefix =
-      prefix.back() == '*' ? prefix.substr(0, prefix.size() - 1) : prefix;
-  auto suggestions = prefixSearcher.getSuggestions(clean_prefix);
-
+void displaySuggestions(const std::vector<std::string>& suggestions) {
   if (!suggestions.empty()) {
     std::cout << "Suggestions: ";
     for (const auto& s : suggestions) {
@@ -52,17 +46,13 @@ std::string trimQuery(const std::string& query) {
 
 int runQuery(const std::string& input, Indexer& indexer,
              const PrefixSearcher& prefixSearcher) {
-  const std::string query = trimQuery(input);
-  auto response = executeQuery(query, indexer, prefixSearcher, 10);
+  auto response = executeQuery(input, indexer, prefixSearcher, 10);
   if (!response.ok()) {
     std::cout << "Invalid query: " << response.message << " Use --help or :help for examples.\n";
     return 2;
   }
 
-  // Only valid prefix queries reach suggestion expansion.
-  if (query.back() == '*' && !(query.front() == '"' && query.back() == '"')) {
-    displaySuggestions(query, prefixSearcher);
-  }
+  displaySuggestions(response.suggestions);
 
   const auto& results = response.results;
 
