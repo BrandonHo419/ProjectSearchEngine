@@ -1,9 +1,11 @@
 # Project Search Engine
 [![Build and regression tests](https://github.com/BrandonHo419/ProjectSearchEngine/actions/workflows/build-and-test.yaml/badge.svg)](https://github.com/BrandonHo419/ProjectSearchEngine/actions/workflows/build-and-test.yaml)
 
-A C++17 search engine for local text files, with an interactive command-line interface.
+A C++17 search engine for local text files, with interactive and single-query command-line modes.
 
 The engine builds an inverted index containing word frequencies and positions. It supports term searches, exact phrases, Boolean operations and prefix matching, then ranks matching documents using TF-IDF.
+
+[Verified demonstration](docs/demo.md) · [Architecture](docs/architecture.md) · [Release notes](RELEASE_NOTES.md)
 
 ## Features
 
@@ -21,11 +23,13 @@ The engine builds an inverted index containing word frequencies and positions. I
 
 ### Requirements
 
-- A compiler supporting C++17, such as GCC.
-- GNU Make.
-- Linux or Windows Subsystem for Linux (WSL) is recommended.
+- A C++17 compiler with standard filesystem support. CI uses GCC on Linux and
+  MSYS2 UCRT64 GCC on native Windows.
+- GNU Make for the Linux/WSL commands below. Native Windows builds use direct
+  compiler commands and do not require Make.
+- Run commands from the repository root so bundled sample paths resolve.
 
-### Build
+### Linux / WSL build
 
 ```bash
 git clone https://github.com/BrandonHo419/ProjectSearchEngine.git
@@ -41,7 +45,9 @@ In the MSYS2 UCRT64 terminal, install GCC if needed:
 pacman -S --needed mingw-w64-ucrt-x86_64-gcc
 ```
 
-From the repository root, build and test with the same commands used by Windows CI:
+In the UCRT64 terminal, change to the cloned repository. Build and test with
+the same compiler commands used by Windows CI. These commands also work in
+PowerShell when the UCRT64 compiler and its runtime DLLs are available on PATH:
 
 ```bash
 g++ -std=c++17 -O2 -Wall -Wextra -pedantic main.cpp Index.cpp -o search.exe
@@ -187,7 +193,9 @@ queries do not produce suggestions. `help` remains an ordinary search term.
 printf '"quick brown fox"\nfo*\nfox OR secret\nx\n' | ./search
 ```
 
-This runs three queries against the sample collection and exits.
+This runs three queries against the sample collection and exits. See the
+[demonstration guide](docs/demo.md) for PowerShell equivalents, captured output
+and expected exit codes.
 
 ## Implementation
 
@@ -241,8 +249,8 @@ The CLI displays up to ten results.
 `processQueryDetailed()` returns each document's score, matched terms with
 whole-document occurrence counts and positions, and matching spans.
 `executeQuery()` returns a `QueryResponse` containing results, a `QueryError`
-code, an explanatory message and prefix suggestions. `ok()` distinguishes valid empty results
-from invalid syntax. Validation still occurs when the result limit is zero
+code, an explanatory message and prefix suggestions. `ok()` distinguishes
+valid empty results from invalid syntax. Validation still occurs when the result limit is zero
 or negative; valid queries with those limits return no results.
 
 `processQueryDetailed()` and `processQuery()` preserve their vector return
@@ -295,12 +303,15 @@ Ellipses indicate omitted text, including later excerpts beyond the limit.
 | `query_processor.hpp` | Query interpretation and ranking. |
 | `makefile` | Build, test and clean targets. |
 | `tests/search_tests.cpp` | Search regression checks. |
+| `docs/demo.md` | Reproducible commands and captured output. |
+| `docs/architecture.md` | Data flow, interfaces and design trade-offs. |
+| `RELEASE_NOTES.md` | Unreleased changes and verification status. |
 | `data/sample/testfile*.txt` | Sample documents. |
 | `data/sample/extreme secret.txt` | Additional synthetic sample document. |
 
 ## Testing
 
-Build the application and run the regression checks from the repository root:
+Build the application and run the regression checks from the repository root.
 The tests also launch the built CLI with redirected input.
 
 ```bash
@@ -326,6 +337,11 @@ The checks cover:
 - Merged snippet windows, excerpt limits and invalid snippet spans.
 - Repeated document indexing and rebuilding the index.
 - CLI completion when redirected input ends.
+
+Successful completion prints `Search regression checks passed.` The suite uses
+C++ assertions: do not compile tests with `-DNDEBUG`. Some systems cannot create
+symbolic links; the suite prints an explicit skip message for those cases.
+A skipped symlink check is not evidence that symlink behaviour passed.
 
 Remove generated build files:
 
@@ -360,5 +376,12 @@ This project builds on a university group search engine developed by
 Brandon Ho, Duy Do and Zixi Khoo.
 
 Project Search Engine continues that foundation as a portfolio project.
-Subsequent maintenance and feature development are recorded in the
-repository history.
+Brandon Ho's subsequent development includes prefix-trie repairs, regression
+coverage, structured results and match-based snippets, query diagnostics,
+directory input, single-query execution and engine-provided suggestions.
+The [commit history](https://github.com/BrandonHo419/ProjectSearchEngine/commits/main/)
+and [release notes](RELEASE_NOTES.md) record that work. These improvements do
+not replace the attribution of the original group project.
+
+No licence has been added. Licensing and publication of a packaged executable
+remain separate decisions.
