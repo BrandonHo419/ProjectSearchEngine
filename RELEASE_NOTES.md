@@ -1,5 +1,16 @@
 # Release notes
 
+## Portfolio milestone — Stages 6–9
+
+Commit `49cd244` passed native Windows/Linux checks and the Pages build/deploy
+workflow. The hosted demo passed live query and recovery checks on 8 November
+2026 (Adelaide). See [verification and project summary](docs/project-summary.md).
+
+Stage 8 caches scoring postings per query; measured before/after results and
+limits are recorded in [the performance report](docs/performance-stage8.md).
+Stage 9 consolidates documentation only. No version tag or binary release is
+created by this milestone. Earlier stage entries below are historical records.
+
 ## Unreleased — GitHub Pages deployment (Stage 6D)
 
 - Add a separate Pages workflow with Emscripten 4.0.10 and native/WASM checks.
@@ -7,7 +18,7 @@
 - Package only explicitly named demo assets and synthetic samples; exclude tests.
 - Restrict deployment to main and isolate Pages/OIDC write permissions.
 - Document Pages setup, local package checks and first-live verification.
-- First hosted run and live URL verification remain pending until pushed and enabled.
+- Hosting and live verification completed; see the milestone evidence above.
 
 
 ## Unreleased — interactive browser demonstration (Stage 6C)

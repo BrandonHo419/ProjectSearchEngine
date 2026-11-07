@@ -5,7 +5,7 @@ The ordered scoring-term loop, including repeated terms, is preserved. The cache
 is local to each execution and cannot retain stale corpus data. Public APIs are unchanged.
 
 Native regressions, fixture tests, five report tests and 72 exact before/after
-JSON response comparisons passed. WASM/browser verification remains pending.
+JSON response comparisons passed. Commit `49cd244` subsequently passed [WASM parity and packaged browser checks](https://github.com/BrandonHo419/ProjectSearchEngine/actions/runs/42378391080).
 
 The table compares the recorded Stage 7 run with this Stage 8 run on the same
 environment and deterministic corpora. Values are median milliseconds per query

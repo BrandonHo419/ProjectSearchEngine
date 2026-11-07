@@ -3,8 +3,7 @@
 This build executes the existing C++ engine through JavaScript. It provides a
 bridge, Node.js verification and a browser demonstration. A separate Pages
 workflow builds, tests and publishes the static assets. Native build commands
-and the existing Windows/Linux workflow are unchanged. First live verification
-is pending.
+and the existing Windows/Linux workflow are unchanged. The [live demo](https://brandonho419.github.io/ProjectSearchEngine/demo/) was verified on 8 November 2026 (Adelaide).
 
 ## Requirements
 
@@ -223,7 +222,10 @@ One-time setup and first publication:
    `unfindableterm` (no matches). Check a narrow viewport and the network panel
    for successful `.mjs`, `.wasm` and four sample responses. The site root
    redirects using a relative `demo/` URL.
-5. Add a prominent live-demo link only after this first live verification.
+5. For subsequent deployments, repeat these checks against the deployed commit.
+
+The initial setup is complete. Commit `49cd244` passed the [Pages workflow](https://github.com/BrandonHo419/ProjectSearchEngine/actions/runs/42378391080)
+and live interaction checks. The setup steps above remain useful for forks.
 
 The workflow uses Python 3, Node 24, native GCC, Emscripten 4.0.10 and Chrome
 already supplied by the Ubuntu 24.04 runner. There are no npm packages.

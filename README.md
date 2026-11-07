@@ -5,7 +5,7 @@ A C++17 search engine for local text files, with interactive and single-query co
 
 The engine builds an inverted index containing word frequencies and positions. It supports term searches, exact phrases, Boolean operations and prefix matching, then ranks matching documents using TF-IDF.
 
-[Verified demonstration](docs/demo.md) · [Architecture](docs/architecture.md) · [Release notes](RELEASE_NOTES.md) · [Browser demo setup](docs/wasm.md#run-the-browser-demonstration)
+[Live browser demo](https://brandonho419.github.io/ProjectSearchEngine/demo/) · [CLI walkthrough](docs/demo.md) · [Project summary](docs/project-summary.md) · [Architecture](docs/architecture.md) · [Release notes](RELEASE_NOTES.md) · [Browser demo setup](docs/wasm.md#run-the-browser-demonstration)
 
 ## Features
 
@@ -282,7 +282,7 @@ An optional [WebAssembly bridge](docs/wasm.md) loads document arrays and returns
 plain JavaScript responses. The local `demo/` page uses that engine with the
 bundled samples. See [browser setup](docs/wasm.md#run-the-browser-demonstration);
 a gated [GitHub Pages workflow](docs/wasm.md#github-pages-deployment) builds and publishes the static demo.
-First publication and live verification are pending.
+Try the [live demonstration](https://brandonho419.github.io/ProjectSearchEngine/demo/); see [verified release evidence](docs/project-summary.md#verification).
 
 ### Explanation details
 
@@ -382,8 +382,8 @@ make clean
 
 ## Planned improvements
 
-- Investigate measured query-scaling costs; see the [performance baseline](docs/performance.md).
-- Verify the first public Pages deployment after enabling GitHub Actions publishing.
+- Extend performance coverage to larger vocabularies and measure peak memory.
+- Consider a larger user-supplied corpus only after defining resource limits.
 
 ## Project background and contributions
 

@@ -145,9 +145,10 @@ returns an entire postings map by value. Repeated map copies may account for
 part of the scaling cost. These end-to-end timings do not isolate that cost;
 this remains a hypothesis, not a measured attribution.
 
-Proposed Stage 8: profile or instrument the repeated postings retrieval, then
+Historical Stage 8 proposal: profile or instrument the repeated postings retrieval, then
 consider a query-local cache so each distinct scoring term is retrieved once.
 Keep public APIs, query semantics, repeated-term scoring, explanations and
 ranking tie-breaks unchanged. Compare the same corpora and queries before/after,
 run native/WASM regressions, and report both gains and regressions. Stage 8
-requires separate approval; no optimization is included here.
+was subsequently approved and implemented. This document retains the original
+baseline; see [Stage 8 results](performance-stage8.md) for the current implementation.
