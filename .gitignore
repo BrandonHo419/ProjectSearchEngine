@@ -6,3 +6,5 @@
 /tests/search-tests
 /tests/tmp/
 /wasm/generated/
+/_site/
+__pycache__/

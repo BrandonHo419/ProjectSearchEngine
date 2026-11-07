@@ -2,7 +2,7 @@
 
 Project Search Engine is a local C++17 portfolio application for plain-text
 search. Its interfaces are a native CLI and an optional JavaScript/WebAssembly
-bridge used by the local browser demo. It is not a hosted service.
+bridge used by the browser demo. Static hosting serves assets; search runs locally.
 
 ## Responsibilities
 
@@ -148,5 +148,8 @@ corpus, then enables search. It uses native responses for ranking/explanations
 and DOM text nodes for rendering. Query and load failures have distinct states.
 On real page unload it disposes the engine; back/forward-cache restores retain
 it. The browser test page compares rendered results to direct bridge calls.
-See [WebAssembly build and API details](wasm.md). Deployment, packaged binaries
+The Pages workflow runs native, WebAssembly and packaged browser checks before
+publishing an explicit allowlist of static assets. Its deployment job alone has
+Pages write and OIDC permissions; pull requests only build and test.
+See [WebAssembly build and deployment details](wasm.md). Native packaged binaries
 and licensing remain separate decisions.

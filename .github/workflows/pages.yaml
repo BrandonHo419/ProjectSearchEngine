@@ -1,0 +1,66 @@
+name: Build and deploy browser demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Native regression checks
+        run: make test
+      - name: Install pinned Emscripten SDK
+        run: |
+          git clone --depth 1 --branch 4.0.10 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install 4.0.10
+          "$RUNNER_TEMP/emsdk/emsdk" activate 4.0.10
+      - name: Build WebAssembly and verify native parity
+        run: |
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+          python3 scripts/build_wasm.py
+          node tests/wasm_tests.mjs
+      - name: Verify packaging and prepare public assets
+        run: |
+          python3 tests/package_demo_tests.py
+          python3 scripts/package_demo.py _site
+      - name: Browser regressions against packaged site
+        run: node scripts/test_browser.mjs _site
+      - name: Configure Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+      - name: Upload verified public assets
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy verified artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

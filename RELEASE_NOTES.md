@@ -1,5 +1,15 @@
 # Release notes
 
+## Unreleased — GitHub Pages deployment (Stage 6D)
+
+- Add a separate Pages workflow with Emscripten 4.0.10 and native/WASM checks.
+- Gate publication on browser regressions under the repository URL prefix.
+- Package only explicitly named demo assets and synthetic samples; exclude tests.
+- Restrict deployment to main and isolate Pages/OIDC write permissions.
+- Document Pages setup, local package checks and first-live verification.
+- First hosted run and live URL verification remain pending until pushed and enabled.
+
+
 ## Unreleased — interactive browser demonstration (Stage 6C)
 
 - Add a responsive, keyboard-accessible local demo using the real WebAssembly engine.

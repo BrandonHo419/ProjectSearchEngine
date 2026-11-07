@@ -281,7 +281,8 @@ text; see the [API example](docs/architecture.md#in-memory-document-loading).
 An optional [WebAssembly bridge](docs/wasm.md) loads document arrays and returns
 plain JavaScript responses. The local `demo/` page uses that engine with the
 bundled samples. See [browser setup](docs/wasm.md#run-the-browser-demonstration);
-no public deployment is included.
+a gated [GitHub Pages workflow](docs/wasm.md#github-pages-deployment) builds and publishes the static demo.
+First publication and live verification are pending.
 
 ### Explanation details
 
@@ -382,7 +383,7 @@ make clean
 ## Planned improvements
 
 - Add reproducible performance benchmarks.
-- Publish the browser demonstration after deployment review.
+- Verify the first public Pages deployment after enabling GitHub Actions publishing.
 
 ## Project background and contributions
 

@@ -1,8 +1,10 @@
 # Optional WebAssembly bridge
 
 This build executes the existing C++ engine through JavaScript. It provides a
-bridge, Node.js verification and a local browser demonstration. No site has
-been deployed. Native build commands and GitHub Actions are unchanged.
+bridge, Node.js verification and a browser demonstration. A separate Pages
+workflow builds, tests and publishes the static assets. Native build commands
+and the existing Windows/Linux workflow are unchanged. First live verification
+is pending.
 
 ## Requirements
 
@@ -190,10 +192,70 @@ bridge. Run the separate browser test page for page and browser-loading checks.
   UTF-8 ID transport does not add Unicode linguistic search support.
 - Indexing and searching are synchronous after module initialisation. Use a small,
   trusted sample corpus; workers, cancellation and resource limits are future work.
-- The local browser UI is included; deployment remains a separate stage. CI
-  has not been extended to install Emscripten or run the optional/browser suites.
+- The Pages workflow installs the pinned SDK and runs native, optional and
+  packaged browser suites. Static hosting does not add a search backend.
 
 Implementation references: [Emscripten SDK setup](https://emscripten.org/docs/getting_started/downloads.html),
 [Embind](https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html),
 [modularised output](https://emscripten.org/docs/compiling/Modularized-Output.html),
 and [C++ exceptions](https://emscripten.org/docs/porting/exceptions.html).
+
+## GitHub Pages deployment
+
+The `Build and deploy browser demo` workflow builds on pull requests, pushes to
+`main`, and manual dispatch. Only pushes/manual runs on `main` publish, after
+all checks pass. The deployment uses the `github-pages` environment and a
+separate job with `pages: write` and `id-token: write`; the build is read-only.
+The existing native Windows/Linux workflow remains independent.
+
+One-time setup and first publication:
+
+1. In repository **Settings → Pages → Build and deployment**, choose
+   **GitHub Actions** as the source. Keep the `github-pages` environment restricted
+   to `main` (and any desired reviewer rules).
+2. Commit and push the Stage 6D changes to `main`. If already pushed, manually
+   run **Build and deploy browser demo** on `main` after enabling Pages.
+3. Require a successful build and deploy job. The expected address is
+   `https://brandonho419.github.io/ProjectSearchEngine/demo/`.
+   This is an expected address, not a claim of verified publication.
+4. Open the deployment URL, check `fo*` (three results, `testfile3.txt` first),
+   `"quick brown fox"` (two results), `fox AND` (validation error), and
+   `unfindableterm` (no matches). Check a narrow viewport and the network panel
+   for successful `.mjs`, `.wasm` and four sample responses. The site root
+   redirects using a relative `demo/` URL.
+5. Add a prominent live-demo link only after this first live verification.
+
+The workflow uses Python 3, Node 24, native GCC, Emscripten 4.0.10 and Chrome
+already supplied by the Ubuntu 24.04 runner. There are no npm packages.
+The SDK activation supplies its own Node for parity tests; browser automation
+runs in a separate step using Node 24 and its built-in WebSocket API.
+
+`scripts/package_demo.py` copies exactly the three demo files, the wrapper,
+the two generated WASM files and the four named synthetic samples. It adds
+`.nojekyll` and a relative root redirect. No source, tests, SDK, other documents
+or repository metadata are published. Missing/linked assets fail packaging;
+nonempty destinations are rejected rather than silently retaining stale files.
+Use a fresh output directory for each local build.
+
+After building WASM, reproduce packaging checks from the repository root:
+
+```text
+python tests/package_demo_tests.py
+python scripts/package_demo.py _site
+node scripts/test_browser.mjs _site
+```
+
+The browser runner temporarily copies the package and adds the existing harness
+outside the publication directory. It serves under `/ProjectSearchEngine/` and
+requires the harness to report success; failures/timeouts exit nonzero. Expect
+55 browser checks. It requires Node 24 and installed Chrome/Chromium. Set
+`CHROME_BIN` to the browser executable and, on Windows, `PYTHON=python` in the
+shell environment. `CHROME_NO_SANDBOX=1` is only for isolated root containers;
+the GitHub runner uses Chrome's sandbox by default.
+
+For manual inspection, serve `_site` with `python -m http.server 8000 --bind
+127.0.0.1 --directory _site` and visit `/demo/`. The regression harness is not
+included in the published package. Retain the generated WASM outputs outside
+Git; CI rebuilds them on every run.
+
+Workflow reference: [GitHub custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
