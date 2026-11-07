@@ -13,10 +13,10 @@ VERSION = "4.0.10"
 def main():
     compiler = shutil.which("em++")
     if not compiler:
-        sys.exit("em++ not found. Activate Emscripten 4.0.10; see docs/wasm.md.")
+        sys.exit("em++ not found. Activate Emscripten 4.0.10; see README.md (Browser build).")
     version = subprocess.run([compiler, "--version"], check=True, capture_output=True, text=True)
     if not re.search(r"\b" + re.escape(VERSION) + r"\b", version.stdout):
-        sys.exit(f"Expected Emscripten {VERSION}. Activate the pinned SDK; see docs/wasm.md.")
+        sys.exit(f"Expected Emscripten {VERSION}. Activate the pinned SDK; see README.md (Browser build).")
     output = ROOT / "wasm" / "generated"
     output.mkdir(parents=True, exist_ok=True)
     subprocess.run([
