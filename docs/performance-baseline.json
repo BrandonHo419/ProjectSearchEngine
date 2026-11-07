@@ -1,0 +1,1437 @@
+{
+  "schema_version": 1,
+  "corpus_version": 1,
+  "started_utc": "2026-11-07T13:10:19.293378+00:00",
+  "environment": {
+    "os": "Linux-6.18.57-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 9,
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "flags": [
+      "-std=c++17",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-pedantic",
+      "-I."
+    ],
+    "python": "3.12.14"
+  },
+  "source": {
+    "git_head": "f4c5fb3f134c2f7360818e1c0f6b93eeaf5933f5",
+    "git_status": "M README.md\n?? benchmarks/\n?? scripts/__pycache__/\n?? scripts/benchmark.py\n?? tests/benchmark_runner_tests.py\n?? tests/benchmark_tests.cpp",
+    "sha256": {
+      "Index.cpp": "baa6e230d67ab2cf4d773bde5c786b9a7df4ee211d3374d27de478757d9ab3e3",
+      "Index.h": "c933d290cd07b58612a04606c16255c4dceca3b2337b732a4550d3816df2733d",
+      "ExactSearcher.hpp": "e9af4c7857698d81b6e01cd8c047cc3e5638d5a87823cef3b8e29c5319b5a380",
+      "PrefixSearcher.hpp": "2f47b37de51c5eed4112529f5c68c82ca2d9fc7cbe2ba72fd5511f5f418dbaf1",
+      "query_processor.hpp": "8b5283dcab04f2dca561153685719fa958a1a95f672a9da4c5bf7dd0448d1757",
+      "benchmarks/corpus.hpp": "539ca05a17ac0be8270b5a9bbebfd6527bc8958c65ee84aca72cc0e19322b29b",
+      "benchmarks/search_benchmark.cpp": "553d15ba219ee70c0a9d0d85d7eee2458c50b9038ce1ca3602a8a5b80c8adaa5",
+      "tests/benchmark_tests.cpp": "e323dc6a0af7904ef98f40957114140e282d44d3bc6a8c185e7e9166b2e1e7a3",
+      "scripts/benchmark.py": "239d95e750773186813b6c8333731d4bac9fc2c510a8513bb3448fa5d586f058",
+      "tests/benchmark_runner_tests.py": "c7aa4008faa30143c80efff006e6440ae4339539e57b2e2772e00cfc1a3febb9"
+    }
+  },
+  "method": {
+    "clock": "std::chrono::steady_clock",
+    "top_k": 10,
+    "build_warmups": 1,
+    "query_warmups_per_workload": 1,
+    "samples": 5,
+    "query_iterations": 3,
+    "query_scope": "executeQuery + returned-result snippets + response destruction"
+  },
+  "runs": [
+    {
+      "corpus": {
+        "documents": 100,
+        "words_per_document": 128,
+        "text_bytes": 101705,
+        "seed": 1234,
+        "fingerprint_fnv1a64": "66d5eaa661f4d130"
+      },
+      "summary": {
+        "index": {
+          "median_ms": 4.406143,
+          "min_ms": 4.33133,
+          "max_ms": 4.790633
+        },
+        "trie": {
+          "median_ms": 0.60992,
+          "min_ms": 0.589759,
+          "max_ms": 0.63681
+        },
+        "common_term": {
+          "median_ms": 0.4926626666666667,
+          "min_ms": 0.456041,
+          "max_ms": 0.5416966666666666
+        },
+        "rare_term": {
+          "median_ms": 0.022207,
+          "min_ms": 0.021853,
+          "max_ms": 0.033964666666666664
+        },
+        "phrase": {
+          "median_ms": 0.368155,
+          "min_ms": 0.3239783333333333,
+          "max_ms": 0.3944816666666667
+        },
+        "prefix": {
+          "median_ms": 1.8898093333333332,
+          "min_ms": 1.6747883333333335,
+          "max_ms": 1.9269953333333334
+        },
+        "boolean_and": {
+          "median_ms": 0.04231033333333333,
+          "min_ms": 0.033534,
+          "max_ms": 0.17189266666666667
+        },
+        "boolean_or": {
+          "median_ms": 0.09251966666666667,
+          "min_ms": 0.09040633333333332,
+          "max_ms": 0.13262333333333334
+        },
+        "exclusion": {
+          "median_ms": 0.419112,
+          "min_ms": 0.37345300000000003,
+          "max_ms": 0.5202643333333333
+        },
+        "missing": {
+          "median_ms": 0.000781,
+          "min_ms": 0.000768,
+          "max_ms": 0.0010116666666666666
+        }
+      },
+      "measurements": [
+        {
+          "workload": "index",
+          "sample": 0,
+          "iterations": 1,
+          "total_ms": 4.33133,
+          "ms_per_operation": 4.33133,
+          "checksum": 100
+        },
+        {
+          "workload": "trie",
+          "sample": 0,
+          "iterations": 1,
+          "total_ms": 0.60992,
+          "ms_per_operation": 0.60992,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 1,
+          "iterations": 1,
+          "total_ms": 4.557862,
+          "ms_per_operation": 4.557862,
+          "checksum": 100
+        },
+        {
+          "workload": "trie",
+          "sample": 1,
+          "iterations": 1,
+          "total_ms": 0.63681,
+          "ms_per_operation": 0.63681,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 2,
+          "iterations": 1,
+          "total_ms": 4.406143,
+          "ms_per_operation": 4.406143,
+          "checksum": 100
+        },
+        {
+          "workload": "trie",
+          "sample": 2,
+          "iterations": 1,
+          "total_ms": 0.604791,
+          "ms_per_operation": 0.604791,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 3,
+          "iterations": 1,
+          "total_ms": 4.348807,
+          "ms_per_operation": 4.348807,
+          "checksum": 100
+        },
+        {
+          "workload": "trie",
+          "sample": 3,
+          "iterations": 1,
+          "total_ms": 0.589759,
+          "ms_per_operation": 0.589759,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 4,
+          "iterations": 1,
+          "total_ms": 4.790633,
+          "ms_per_operation": 4.790633,
+          "checksum": 100
+        },
+        {
+          "workload": "trie",
+          "sample": 4,
+          "iterations": 1,
+          "total_ms": 0.635689,
+          "ms_per_operation": 0.635689,
+          "checksum": 263
+        },
+        {
+          "workload": "common_term",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 1.581925,
+          "ms_per_operation": 0.5273083333333334,
+          "checksum": 1182
+        },
+        {
+          "workload": "rare_term",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.101894,
+          "ms_per_operation": 0.033964666666666664,
+          "checksum": 642
+        },
+        {
+          "workload": "phrase",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 1.183445,
+          "ms_per_operation": 0.3944816666666667,
+          "checksum": 2088
+        },
+        {
+          "workload": "prefix",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 5.706493,
+          "ms_per_operation": 1.9021643333333333,
+          "checksum": 5547
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.139179,
+          "ms_per_operation": 0.046393,
+          "checksum": 882
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.39787,
+          "ms_per_operation": 0.13262333333333334,
+          "checksum": 1752
+        },
+        {
+          "workload": "exclusion",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 1.257336,
+          "ms_per_operation": 0.419112,
+          "checksum": 1194
+        },
+        {
+          "workload": "missing",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.003035,
+          "ms_per_operation": 0.0010116666666666666,
+          "checksum": 0
+        },
+        {
+          "workload": "rare_term",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.067231,
+          "ms_per_operation": 0.022410333333333334,
+          "checksum": 642
+        },
+        {
+          "workload": "phrase",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 1.10727,
+          "ms_per_operation": 0.36909,
+          "checksum": 2088
+        },
+        {
+          "workload": "prefix",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 5.180029,
+          "ms_per_operation": 1.7266763333333335,
+          "checksum": 5547
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.121273,
+          "ms_per_operation": 0.04042433333333333,
+          "checksum": 882
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.276517,
+          "ms_per_operation": 0.09217233333333334,
+          "checksum": 1752
+        },
+        {
+          "workload": "exclusion",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 1.26648,
+          "ms_per_operation": 0.42216000000000004,
+          "checksum": 1194
+        },
+        {
+          "workload": "missing",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.002834,
+          "ms_per_operation": 0.0009446666666666667,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 1.473652,
+          "ms_per_operation": 0.49121733333333334,
+          "checksum": 1182
+        },
+        {
+          "workload": "phrase",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 1.104465,
+          "ms_per_operation": 0.368155,
+          "checksum": 2088
+        },
+        {
+          "workload": "prefix",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 5.669428,
+          "ms_per_operation": 1.8898093333333332,
+          "checksum": 5547
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.515678,
+          "ms_per_operation": 0.17189266666666667,
+          "checksum": 882
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.277559,
+          "ms_per_operation": 0.09251966666666667,
+          "checksum": 1752
+        },
+        {
+          "workload": "exclusion",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 1.560793,
+          "ms_per_operation": 0.5202643333333333,
+          "checksum": 1194
+        },
+        {
+          "workload": "missing",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.002304,
+          "ms_per_operation": 0.000768,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 1.368123,
+          "ms_per_operation": 0.456041,
+          "checksum": 1182
+        },
+        {
+          "workload": "rare_term",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.065559,
+          "ms_per_operation": 0.021853,
+          "checksum": 642
+        },
+        {
+          "workload": "prefix",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 5.024365,
+          "ms_per_operation": 1.6747883333333335,
+          "checksum": 5547
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.126931,
+          "ms_per_operation": 0.04231033333333333,
+          "checksum": 882
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.271219,
+          "ms_per_operation": 0.09040633333333332,
+          "checksum": 1752
+        },
+        {
+          "workload": "exclusion",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 1.120359,
+          "ms_per_operation": 0.37345300000000003,
+          "checksum": 1194
+        },
+        {
+          "workload": "missing",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.002324,
+          "ms_per_operation": 0.0007746666666666667,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 1.62509,
+          "ms_per_operation": 0.5416966666666666,
+          "checksum": 1182
+        },
+        {
+          "workload": "rare_term",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.0665,
+          "ms_per_operation": 0.022166666666666668,
+          "checksum": 642
+        },
+        {
+          "workload": "phrase",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.971935,
+          "ms_per_operation": 0.3239783333333333,
+          "checksum": 2088
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.100602,
+          "ms_per_operation": 0.033534,
+          "checksum": 882
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.349467,
+          "ms_per_operation": 0.11648900000000001,
+          "checksum": 1752
+        },
+        {
+          "workload": "exclusion",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 1.24714,
+          "ms_per_operation": 0.4157133333333333,
+          "checksum": 1194
+        },
+        {
+          "workload": "missing",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.002343,
+          "ms_per_operation": 0.000781,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 1.477988,
+          "ms_per_operation": 0.4926626666666667,
+          "checksum": 1182
+        },
+        {
+          "workload": "rare_term",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.066621,
+          "ms_per_operation": 0.022207,
+          "checksum": 642
+        },
+        {
+          "workload": "phrase",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 1.053108,
+          "ms_per_operation": 0.35103599999999996,
+          "checksum": 2088
+        },
+        {
+          "workload": "prefix",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 5.780986,
+          "ms_per_operation": 1.9269953333333334,
+          "checksum": 5547
+        }
+      ]
+    },
+    {
+      "corpus": {
+        "documents": 500,
+        "words_per_document": 128,
+        "text_bytes": 508525,
+        "seed": 1234,
+        "fingerprint_fnv1a64": "25b5f74595fc29cf"
+      },
+      "summary": {
+        "index": {
+          "median_ms": 21.649049,
+          "min_ms": 20.566436,
+          "max_ms": 25.326804
+        },
+        "trie": {
+          "median_ms": 3.848772,
+          "min_ms": 3.351722,
+          "max_ms": 4.973077
+        },
+        "common_term": {
+          "median_ms": 17.788151666666668,
+          "min_ms": 17.245380333333333,
+          "max_ms": 18.198437000000002
+        },
+        "rare_term": {
+          "median_ms": 0.07702266666666667,
+          "min_ms": 0.07674566666666667,
+          "max_ms": 0.11745366666666666
+        },
+        "phrase": {
+          "median_ms": 10.286722,
+          "min_ms": 10.106195,
+          "max_ms": 14.334774000000001
+        },
+        "prefix": {
+          "median_ms": 60.21340333333333,
+          "min_ms": 58.053463666666666,
+          "max_ms": 62.62183733333333
+        },
+        "boolean_and": {
+          "median_ms": 0.24619133333333332,
+          "min_ms": 0.24236866666666668,
+          "max_ms": 0.3442256666666667
+        },
+        "boolean_or": {
+          "median_ms": 1.071088,
+          "min_ms": 0.8484189999999999,
+          "max_ms": 1.189363
+        },
+        "exclusion": {
+          "median_ms": 13.749920000000001,
+          "min_ms": 13.19227,
+          "max_ms": 15.628051999999999
+        },
+        "missing": {
+          "median_ms": 0.0014086666666666666,
+          "min_ms": 0.0013086666666666665,
+          "max_ms": 0.0017193333333333333
+        }
+      },
+      "measurements": [
+        {
+          "workload": "index",
+          "sample": 0,
+          "iterations": 1,
+          "total_ms": 20.566436,
+          "ms_per_operation": 20.566436,
+          "checksum": 500
+        },
+        {
+          "workload": "trie",
+          "sample": 0,
+          "iterations": 1,
+          "total_ms": 3.351722,
+          "ms_per_operation": 3.351722,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 1,
+          "iterations": 1,
+          "total_ms": 21.649049,
+          "ms_per_operation": 21.649049,
+          "checksum": 500
+        },
+        {
+          "workload": "trie",
+          "sample": 1,
+          "iterations": 1,
+          "total_ms": 3.786198,
+          "ms_per_operation": 3.786198,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 2,
+          "iterations": 1,
+          "total_ms": 21.155405,
+          "ms_per_operation": 21.155405,
+          "checksum": 500
+        },
+        {
+          "workload": "trie",
+          "sample": 2,
+          "iterations": 1,
+          "total_ms": 3.848772,
+          "ms_per_operation": 3.848772,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 3,
+          "iterations": 1,
+          "total_ms": 22.30581,
+          "ms_per_operation": 22.30581,
+          "checksum": 500
+        },
+        {
+          "workload": "trie",
+          "sample": 3,
+          "iterations": 1,
+          "total_ms": 4.082675,
+          "ms_per_operation": 4.082675,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 4,
+          "iterations": 1,
+          "total_ms": 25.326804,
+          "ms_per_operation": 25.326804,
+          "checksum": 500
+        },
+        {
+          "workload": "trie",
+          "sample": 4,
+          "iterations": 1,
+          "total_ms": 4.973077,
+          "ms_per_operation": 4.973077,
+          "checksum": 263
+        },
+        {
+          "workload": "common_term",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 51.745504,
+          "ms_per_operation": 17.248501333333333,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.230728,
+          "ms_per_operation": 0.07690933333333333,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 32.015087,
+          "ms_per_operation": 10.671695666666666,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 182.174255,
+          "ms_per_operation": 60.72475166666666,
+          "checksum": 6306
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.727106,
+          "ms_per_operation": 0.24236866666666668,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 2.768634,
+          "ms_per_operation": 0.922878,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 40.75864,
+          "ms_per_operation": 13.586213333333333,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.004136,
+          "ms_per_operation": 0.0013786666666666667,
+          "checksum": 0
+        },
+        {
+          "workload": "rare_term",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.230237,
+          "ms_per_operation": 0.07674566666666667,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 30.860166,
+          "ms_per_operation": 10.286722,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 180.292056,
+          "ms_per_operation": 60.097352,
+          "checksum": 6306
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.75615,
+          "ms_per_operation": 0.25205,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 3.340516,
+          "ms_per_operation": 1.1135053333333333,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 41.24976,
+          "ms_per_operation": 13.749920000000001,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.004547,
+          "ms_per_operation": 0.0015156666666666667,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 51.736141,
+          "ms_per_operation": 17.245380333333333,
+          "checksum": 1191
+        },
+        {
+          "workload": "phrase",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 43.004322,
+          "ms_per_operation": 14.334774000000001,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 174.160391,
+          "ms_per_operation": 58.053463666666666,
+          "checksum": 6306
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.735689,
+          "ms_per_operation": 0.24522966666666668,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 3.213264,
+          "ms_per_operation": 1.071088,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 46.884156,
+          "ms_per_operation": 15.628051999999999,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.005158,
+          "ms_per_operation": 0.0017193333333333333,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 54.052802,
+          "ms_per_operation": 18.017600666666667,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.352361,
+          "ms_per_operation": 0.11745366666666666,
+          "checksum": 1311
+        },
+        {
+          "workload": "prefix",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 180.64021,
+          "ms_per_operation": 60.21340333333333,
+          "checksum": 6306
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.738574,
+          "ms_per_operation": 0.24619133333333332,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 2.545257,
+          "ms_per_operation": 0.8484189999999999,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 41.296334,
+          "ms_per_operation": 13.765444666666667,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.004226,
+          "ms_per_operation": 0.0014086666666666666,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 53.364455,
+          "ms_per_operation": 17.788151666666668,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.231068,
+          "ms_per_operation": 0.07702266666666667,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 30.318585,
+          "ms_per_operation": 10.106195,
+          "checksum": 2115
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 1.032677,
+          "ms_per_operation": 0.3442256666666667,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 3.568089,
+          "ms_per_operation": 1.189363,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 39.57681,
+          "ms_per_operation": 13.19227,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.003926,
+          "ms_per_operation": 0.0013086666666666665,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 54.595311,
+          "ms_per_operation": 18.198437000000002,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.235164,
+          "ms_per_operation": 0.078388,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 30.405885,
+          "ms_per_operation": 10.135295000000001,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 187.865512,
+          "ms_per_operation": 62.62183733333333,
+          "checksum": 6306
+        }
+      ]
+    },
+    {
+      "corpus": {
+        "documents": 1000,
+        "words_per_document": 128,
+        "text_bytes": 1017050,
+        "seed": 1234,
+        "fingerprint_fnv1a64": "96e25711c0221b99"
+      },
+      "summary": {
+        "index": {
+          "median_ms": 49.529254,
+          "min_ms": 48.395845,
+          "max_ms": 57.700572
+        },
+        "trie": {
+          "median_ms": 13.992523,
+          "min_ms": 13.544118,
+          "max_ms": 14.936055
+        },
+        "common_term": {
+          "median_ms": 70.62336233333333,
+          "min_ms": 69.42323533333334,
+          "max_ms": 79.99358
+        },
+        "rare_term": {
+          "median_ms": 0.170617,
+          "min_ms": 0.16653466666666666,
+          "max_ms": 0.17860266666666666
+        },
+        "phrase": {
+          "median_ms": 45.283452000000004,
+          "min_ms": 42.623293,
+          "max_ms": 47.73468833333334
+        },
+        "prefix": {
+          "median_ms": 301.3632566666667,
+          "min_ms": 293.40742366666666,
+          "max_ms": 325.062337
+        },
+        "boolean_and": {
+          "median_ms": 1.198667,
+          "min_ms": 1.1526276666666666,
+          "max_ms": 1.8961686666666668
+        },
+        "boolean_or": {
+          "median_ms": 5.537662,
+          "min_ms": 5.200981333333334,
+          "max_ms": 6.7492643333333335
+        },
+        "exclusion": {
+          "median_ms": 53.45703966666667,
+          "min_ms": 50.927489333333334,
+          "max_ms": 58.30007533333333
+        },
+        "missing": {
+          "median_ms": 0.001856,
+          "min_ms": 0.0017926666666666666,
+          "max_ms": 0.0021233333333333334
+        }
+      },
+      "measurements": [
+        {
+          "workload": "index",
+          "sample": 0,
+          "iterations": 1,
+          "total_ms": 49.529254,
+          "ms_per_operation": 49.529254,
+          "checksum": 1000
+        },
+        {
+          "workload": "trie",
+          "sample": 0,
+          "iterations": 1,
+          "total_ms": 14.121207,
+          "ms_per_operation": 14.121207,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 1,
+          "iterations": 1,
+          "total_ms": 49.040558,
+          "ms_per_operation": 49.040558,
+          "checksum": 1000
+        },
+        {
+          "workload": "trie",
+          "sample": 1,
+          "iterations": 1,
+          "total_ms": 13.992523,
+          "ms_per_operation": 13.992523,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 2,
+          "iterations": 1,
+          "total_ms": 57.700572,
+          "ms_per_operation": 57.700572,
+          "checksum": 1000
+        },
+        {
+          "workload": "trie",
+          "sample": 2,
+          "iterations": 1,
+          "total_ms": 14.936055,
+          "ms_per_operation": 14.936055,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 3,
+          "iterations": 1,
+          "total_ms": 49.913973,
+          "ms_per_operation": 49.913973,
+          "checksum": 1000
+        },
+        {
+          "workload": "trie",
+          "sample": 3,
+          "iterations": 1,
+          "total_ms": 13.894095,
+          "ms_per_operation": 13.894095,
+          "checksum": 263
+        },
+        {
+          "workload": "index",
+          "sample": 4,
+          "iterations": 1,
+          "total_ms": 48.395845,
+          "ms_per_operation": 48.395845,
+          "checksum": 1000
+        },
+        {
+          "workload": "trie",
+          "sample": 4,
+          "iterations": 1,
+          "total_ms": 13.544118,
+          "ms_per_operation": 13.544118,
+          "checksum": 263
+        },
+        {
+          "workload": "common_term",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 211.870087,
+          "ms_per_operation": 70.62336233333333,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.499604,
+          "ms_per_operation": 0.16653466666666666,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 143.204065,
+          "ms_per_operation": 47.73468833333334,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 975.187011,
+          "ms_per_operation": 325.062337,
+          "checksum": 6660
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 5.688506,
+          "ms_per_operation": 1.8961686666666668,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 20.247793,
+          "ms_per_operation": 6.7492643333333335,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 174.900226,
+          "ms_per_operation": 58.30007533333333,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 0,
+          "iterations": 3,
+          "total_ms": 0.00637,
+          "ms_per_operation": 0.0021233333333333334,
+          "checksum": 0
+        },
+        {
+          "workload": "rare_term",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.511851,
+          "ms_per_operation": 0.170617,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 142.662198,
+          "ms_per_operation": 47.554066,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 899.510115,
+          "ms_per_operation": 299.836705,
+          "checksum": 6660
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 3.478113,
+          "ms_per_operation": 1.159371,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 17.266802,
+          "ms_per_operation": 5.755600666666666,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 160.371119,
+          "ms_per_operation": 53.45703966666667,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 0.005378,
+          "ms_per_operation": 0.0017926666666666666,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 1,
+          "iterations": 3,
+          "total_ms": 214.897363,
+          "ms_per_operation": 71.63245433333334,
+          "checksum": 1191
+        },
+        {
+          "workload": "phrase",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 132.258264,
+          "ms_per_operation": 44.086088,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 951.396669,
+          "ms_per_operation": 317.132223,
+          "checksum": 6660
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 3.596001,
+          "ms_per_operation": 1.198667,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 16.612986,
+          "ms_per_operation": 5.537662,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 163.248647,
+          "ms_per_operation": 54.416215666666666,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.005568,
+          "ms_per_operation": 0.001856,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 239.98074,
+          "ms_per_operation": 79.99358,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 2,
+          "iterations": 3,
+          "total_ms": 0.535808,
+          "ms_per_operation": 0.17860266666666666,
+          "checksum": 1311
+        },
+        {
+          "workload": "prefix",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 880.222271,
+          "ms_per_operation": 293.40742366666666,
+          "checksum": 6660
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 3.662572,
+          "ms_per_operation": 1.2208573333333332,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 15.956045,
+          "ms_per_operation": 5.3186816666666665,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 152.782468,
+          "ms_per_operation": 50.927489333333334,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.005518,
+          "ms_per_operation": 0.0018393333333333334,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 210.85581,
+          "ms_per_operation": 70.28527,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 0.502958,
+          "ms_per_operation": 0.16765266666666667,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 3,
+          "iterations": 3,
+          "total_ms": 127.869879,
+          "ms_per_operation": 42.623293,
+          "checksum": 2115
+        },
+        {
+          "workload": "boolean_and",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 3.457883,
+          "ms_per_operation": 1.1526276666666666,
+          "checksum": 1791
+        },
+        {
+          "workload": "boolean_or",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 15.602944,
+          "ms_per_operation": 5.200981333333334,
+          "checksum": 1791
+        },
+        {
+          "workload": "exclusion",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 157.92396,
+          "ms_per_operation": 52.64132,
+          "checksum": 1218
+        },
+        {
+          "workload": "missing",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.005839,
+          "ms_per_operation": 0.0019463333333333331,
+          "checksum": 0
+        },
+        {
+          "workload": "common_term",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 208.269706,
+          "ms_per_operation": 69.42323533333334,
+          "checksum": 1191
+        },
+        {
+          "workload": "rare_term",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 0.520705,
+          "ms_per_operation": 0.17356833333333332,
+          "checksum": 1311
+        },
+        {
+          "workload": "phrase",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 135.850356,
+          "ms_per_operation": 45.283452000000004,
+          "checksum": 2115
+        },
+        {
+          "workload": "prefix",
+          "sample": 4,
+          "iterations": 3,
+          "total_ms": 904.08977,
+          "ms_per_operation": 301.3632566666667,
+          "checksum": 6660
+        }
+      ]
+    }
+  ]
+}

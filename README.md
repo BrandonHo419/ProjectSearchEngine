@@ -382,7 +382,7 @@ make clean
 
 ## Planned improvements
 
-- Add reproducible performance benchmarks.
+- Investigate measured query-scaling costs; see the [performance baseline](docs/performance.md).
 - Verify the first public Pages deployment after enabling GitHub Actions publishing.
 
 ## Project background and contributions
@@ -400,3 +400,11 @@ not replace the attribution of the original group project.
 
 No licence has been added. Licensing and publication of a packaged executable
 remain separate decisions.
+
+## Reproducible performance baseline
+
+Run `python scripts/benchmark.py --output ../search-benchmark.json` with native
+GCC and Python 3 available. The optional runner builds in a temporary directory,
+checks its deterministic fixtures and records raw timings, environment and
+source fingerprints. It does not change the native/WASM build or CI.
+See [workloads, measurement scope and baseline results](docs/performance.md).

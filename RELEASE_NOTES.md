@@ -116,3 +116,13 @@ release is published by this documentation update.
 The original university project was developed by Brandon Ho, Duy Do and Zixi
 Khoo. Subsequent portfolio maintenance and feature development by Brandon Ho
 are recorded in repository history. Original group attribution is retained.
+
+
+## Unreleased — reproducible native benchmarks (Stage 7)
+
+- Add deterministic in-memory synthetic corpora and eight query workloads.
+- Measure fresh indexing/trie builds and warm query-plus-snippet batches.
+- Retain raw timings, fixture fingerprints, source hashes and environment details.
+- Add fixture semantics and report-accounting checks; keep timing out of CI gates.
+- Document a Linux baseline and a focused query-scaling hypothesis for Stage 8.
+- Preserve engine behavior, dependencies, native/WASM builds and CI configuration.

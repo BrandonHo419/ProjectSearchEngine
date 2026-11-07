@@ -156,6 +156,16 @@ inline QueryResponse executeQuery(
   if (topK <= 0) return response;
 
   // Smoothed per-term TF-IDF avoids integer division and zero-only rankings.
+  // Copy each distinct scoring term's postings once per query, not per candidate.
+  // Keep scoringTerms ordered and repeated so score accumulation is unchanged.
+  using Postings = std::unordered_map<std::string, std::pair<int, std::vector<int>>>;
+  std::unordered_map<std::string, Postings> scoringPostings;
+  if (!candidates.empty()) {
+    for (const auto& term : scoringTerms) {
+      if (scoringPostings.find(term) == scoringPostings.end())
+        scoringPostings.emplace(term, index.searchWord(term));
+    }
+  }
   std::vector<SearchResult> ranked;
   for (const auto& [document, frequency] : candidates) {
     const int length = index.getDocLen().at(document);
@@ -163,7 +173,7 @@ inline QueryResponse executeQuery(
     SearchResult result{document, 0.0, {}, {}, phrase, 0};
     std::unordered_set<std::string> explainedTerms;
     for (const auto& term : scoringTerms) {
-      const auto postings = index.searchWord(term);
+      const auto& postings = scoringPostings.at(term);
       const auto match = postings.find(document);
       if (match == postings.end()) continue;
       const double idf = std::log((index.getTotalDoc() + 1.0) / (postings.size() + 1.0)) + 1.0;
