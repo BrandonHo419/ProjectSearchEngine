@@ -5,3 +5,4 @@
 /a.out
 /tests/search-tests
 /tests/tmp/
+/wasm/generated/

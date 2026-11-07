@@ -1,6 +1,46 @@
 # Release notes
 
-## Unreleased — native portfolio release preparation
+## Unreleased — interactive browser demonstration (Stage 6C)
+
+- Add a responsive, keyboard-accessible local demo using the real WebAssembly engine.
+- Show sample queries, suggestions, scores, snippets, matched-term counts and phrase counts.
+- Include query help, inspectable sample texts, loading/error states and reload recovery.
+- Render query/document content as text and search only after all four samples load.
+- Add a dependency-free browser regression page and local HTTP serving instructions.
+- Keep native builds and CI unchanged; no public deployment is included.
+
+
+## Unreleased — optional WebAssembly bridge (Stage 6B)
+
+- Add an Emscripten 4.0.10 build producing an ES module and WebAssembly binary.
+- Expose in-memory corpus loading and full structured search responses to JS.
+- Rebuild index/trie pairs together and provide explicit engine disposal.
+- Add Node/native parity checks and bridge validation/lifecycle tests.
+- Keep native builds and CI unchanged; the browser UI follows in Stage 6C (above).
+
+This incremental patch follows Stage 6A, which the user verified on Windows
+with symlink checks skipped. Stage 6B built with Emscripten 4.0.10 on Linux and
+passed 112 native comparisons plus validation/reload/disposal checks under Node
+24.22.1. Native Windows execution of the optional toolchain remains pending.
+
+## Unreleased — in-memory ingestion (Stage 6A)
+
+- Add `TextDocument`, `Indexer::addDocumentText` and `buildIndexFromText`.
+- Share stream tokenisation between file and text loading while preserving the
+  existing native CLI and file-loading signatures.
+- Define opaque document IDs, last-write-wins replacement, valid empty text,
+  empty-batch clearing and rejection of empty IDs before corpus mutation.
+- Add file/text equivalence tests for scores, ordering, phrases, matched terms,
+  positions, snippets, suggestions and query errors, plus replacement/reset cases.
+- Document trie rebuilding and a standalone C++ API example. Browser bindings
+  and WebAssembly builds were deferred to Stage 6B (above).
+
+Baseline: Stage 5 commit `f20a4fb`, whose [Linux and Windows CI jobs passed](https://github.com/BrandonHo419/ProjectSearchEngine/actions/runs/42305267826).
+Stage 6A passed local Linux checks and a user-provided native Windows regression
+run (symlink cases skipped). Its CI verification remains pending until committed
+and pushed; it does not inherit the baseline commit's CI result.
+
+## Native portfolio release preparation (Stages 1–5, unreleased)
 
 This describes the current native implementation and prepares release material.
 It does not announce a tagged release, downloadable executable or browser demo.

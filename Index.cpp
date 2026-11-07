@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <stdexcept>
 
 // Only strip basic punctuation, keep letters to make it easier
 std::string Indexer::normalizeWord(const std::string& word) const {
@@ -18,54 +19,62 @@ std::string Indexer::normalizeWord(const std::string& word) const {
     return clean;
 }
 
-// Adds a document into the inverted index, 
 void Indexer::addDocument(const std::string& filename) {
     std::ifstream file(filename);
     if (!file) {
         std::cout << "Error with file: " << filename << "\n";
         return;
     }
+    indexDocument(filename, file);
+}
+
+void Indexer::addDocumentText(const std::string& documentId, const std::string& text) {
+    if (documentId.empty()) {
+        throw std::invalid_argument("Document ID must not be empty.");
+    }
+    std::istringstream input(text);
+    indexDocument(documentId, input);
+}
+
+// Both input paths share tokenisation so positions, ranking and snippets agree.
+void Indexer::indexDocument(const std::string& documentId, std::istream& input) {
     // Replacing a document must not duplicate frequencies or positions.
-    for (auto& entry : invertedIndex) entry.second.erase(filename);
+    for (auto& entry : invertedIndex) entry.second.erase(documentId);
 
     std::string word, content;
-    
     int total = 0, position = 0;
-
-        // count word freq, store positions and save full document text
-        while (file >> word) {
-            std::string clean = normalizeWord(word);
-
-            if (clean.empty()) continue;
-
-            // increases the count for the current word for the current file
-            invertedIndex[clean][filename].first++;
-
-            // marks the position of the current word for the current file
-            invertedIndex[clean][filename].second.push_back(position++);
-            total++;
-            content += word + " ";
-            
-        }
-        docLen[filename] = total;
-
-        // for the snippet
-        docContent[filename] = content;
-
-
-
-
-        file.close();
+    while (input >> word) {
+        std::string clean = normalizeWord(word);
+        if (clean.empty()) continue;
+        invertedIndex[clean][documentId].first++;
+        invertedIndex[clean][documentId].second.push_back(position++);
+        total++;
+        content += word + " ";
     }
+    docLen[documentId] = total;
+    docContent[documentId] = content;
+}
 
-// Builds the index for all the required files
-void Indexer::buildIndex(const std::vector<std::string>& files) {
+void Indexer::clearIndex() {
     invertedIndex.clear();
     docLen.clear();
     docContent.clear();
-    for (const auto& file : files) {
-        addDocument(file);
+}
+
+void Indexer::buildIndex(const std::vector<std::string>& files) {
+    clearIndex();
+    for (const auto& file : files) addDocument(file);
+}
+
+void Indexer::buildIndexFromText(const std::vector<TextDocument>& documents) {
+    // Validate all IDs before discarding the current corpus.
+    for (const auto& document : documents) {
+        if (document.id.empty()) {
+            throw std::invalid_argument("Document ID must not be empty.");
+        }
     }
+    clearIndex();
+    for (const auto& document : documents) addDocumentText(document.id, document.text);
 }
 
 // Lookups for words, used from query_processor

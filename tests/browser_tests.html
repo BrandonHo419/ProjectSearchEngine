@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search demo browser regression checks</title>
+  <link rel="icon" href="data:,">
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; margin: 24px; }
+    iframe { width: 100%; height: 600px; border: 1px solid #999; }
+    #output { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Search demo browser regression checks</h1>
+  <p>Build the WebAssembly module and serve the repository root before opening this page.</p>
+  <pre id="output" role="status" data-state="running">Running…</pre>
+  <iframe id="demo" src="../demo/" title="Search demo under test"></iframe>
+  <script type="module">
+    const output = document.getElementById('output');
+    const frame = document.getElementById('demo');
+    let checks = 0;
+    const check = (condition, message) => {
+      if (!condition) throw new Error(message);
+      checks++;
+    };
+    const waitFor = async predicate => {
+      const deadline = performance.now() + 20000;
+      while (!predicate()) {
+        if (performance.now() > deadline) throw new Error('Timed out waiting for the demo.');
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    };
+    try {
+      await waitFor(() => frame.contentDocument?.querySelector('#engine-status')?.dataset.state === 'ready');
+      const doc = frame.contentDocument;
+      const cards = () => [...doc.querySelectorAll('.result')];
+      const search = query => {
+        doc.querySelector('#query').value = query;
+        doc.querySelector('#search-form').dispatchEvent(new frame.contentWindow.Event('submit', { cancelable: true }));
+      };
+      check(!doc.querySelector('#search-controls').disabled, 'Controls should be enabled.');
+      check(doc.querySelectorAll('#documents details').length === 4, 'All sample texts should be available.');
+      check(cards().length === 3, 'Initial prefix search should find three documents.');
+      check(cards()[0].querySelector('.document-name').textContent === 'testfile3.txt', 'Prefix ordering differs.');
+      check(cards()[0].querySelector('.score').textContent === 'Score 0.174208', 'Prefix score differs.');
+      check([...doc.querySelectorAll('#suggestions button')].map(x => x.textContent).join(',') === 'fox,foxes', 'Prefix suggestions differ.');
+      doc.querySelector('#suggestions button').click();
+      check(doc.querySelector('#query').value === 'fox' && cards().length === 2, 'Suggestion buttons should search.');
+      doc.querySelector('[data-query="fo*"]').click();
+      check(cards().length === 3, 'Example buttons should search.');
+      search('"quick brown fox"');
+      check(cards().length === 2, 'Phrase query should find two documents.');
+      check(cards().every(card => card.querySelector('.phrase-count').textContent === 'Complete phrase occurrences: 1'), 'Phrase counts differ.');
+      check(doc.querySelector('#suggestions').hidden, 'Phrase query must clear prefix suggestions.');
+      search('fox AND');
+      check(!doc.querySelector('#query-error').hidden, 'Invalid query should display an error.');
+      check(cards().length === 0, 'Invalid query must clear stale results.');
+      check(doc.querySelector('#query').getAttribute('aria-invalid') === 'true', 'Invalid input should be announced.');
+      search('unfindableterm');
+      check(doc.querySelector('#query-error').hidden, 'Valid empty query result must clear old errors.');
+      check(doc.querySelector('#results-summary').textContent.startsWith('No matching documents'), 'Missing no-match message.');
+      search('   ');
+      check(!doc.querySelector('#query-error').hidden, 'Blank query should report validation failure.');
+      search('fox');
+      check(cards().length === 2 && doc.querySelector('#query-error').hidden, 'Search must recover after errors.');
+      check(!doc.querySelector('#query').hasAttribute('aria-invalid'), 'Recovered input should clear aria-invalid.');
+      search('<img src=x onerror=alert(1)>');
+      check(doc.querySelectorAll('#result-list img, #results-summary img, #query-error img').length === 0, 'Query text must never become markup.');
+      search('fo*');
+      const { createSearchEngine } = await import('../wasm/search-engine.mjs');
+      const engine = await createSearchEngine();
+      try {
+        const documents = await Promise.all(['testfile1.txt', 'testfile2.txt', 'testfile3.txt', 'extreme secret.txt'].map(async name => {
+          const response = await fetch(`../data/sample/${encodeURIComponent(name)}`);
+          if (!response.ok) throw new Error('Fixture fetch failed.');
+          return { id: `data/sample/${name}`, text: await response.text() };
+        }));
+        engine.loadDocuments(documents);
+        for (const query of ['fox', 'fo*', '"quick brown fox"', 'fox OR secret', 'fox - dog']) {
+          search(query);
+          const results = engine.search(query).results;
+          check(cards().length === results.length, 'Rendered count differs from engine.');
+          results.forEach((result, i) => {
+            check(cards()[i].querySelector('.snippet').textContent === result.snippet, 'Rendered snippet differs.');
+            check(cards()[i].querySelector('.score').textContent === `Score ${result.score.toFixed(6)}`, 'Rendered score differs.');
+            check(cards()[i].querySelector('.result-path').textContent === `${result.document} · ${result.wordCount} indexed words`, 'Rendered document details differ.');
+          });
+        }
+      } finally { engine.dispose(); }
+      output.dataset.state = 'passed';
+      output.textContent = `Browser regression checks passed (${checks} checks).`;
+    } catch (error) {
+      output.dataset.state = 'failed';
+      output.textContent = `FAIL: ${error.message}`;
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

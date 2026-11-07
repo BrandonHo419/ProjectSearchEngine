@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore a C++ text search engine running locally in your browser through WebAssembly.">
+  <title>Project Search Engine — Interactive demo</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#search-form">Skip to search</a>
+  <header class="site-header">
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">⌕</span> Project Search Engine</a>
+    <a class="source-link" href="https://github.com/BrandonHo419/ProjectSearchEngine">View source <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">C++17 / WebAssembly</p>
+      <h1 id="page-title">Search, explained.</h1>
+      <p class="lede">Explore terms, phrases and prefixes. See why each document matches and how it ranks.</p>
+      <p id="engine-status" class="engine-status" role="status" data-state="loading">Loading the search engine…</p>
+    </section>
+
+    <section class="search-panel" aria-label="Search the sample collection">
+      <form id="search-form">
+        <fieldset id="search-controls" disabled>
+          <legend class="sr-only">Search controls</legend>
+          <label for="query">Search the sample collection</label>
+          <div class="search-row">
+            <input id="query" name="query" type="text" value="fo*" autocomplete="off" spellcheck="false" maxlength="1024" aria-describedby="query-hint">
+            <button class="primary" type="submit">Search <span aria-hidden="true">→</span></button>
+          </div>
+          <p id="query-hint" class="hint">Try a word, a quoted phrase, or a prefix ending in *. Up to 1,024 characters.</p>
+          <div class="examples" aria-label="Example queries">
+            <span>Try:</span>
+            <button type="button" data-query="fox">fox</button>
+            <button type="button" data-query='"quick brown fox"'>"quick brown fox"</button>
+            <button type="button" data-query="fo*">fo*</button>
+            <button type="button" data-query="fox OR secret">fox OR secret</button>
+            <button type="button" data-query="fox - dog">fox - dog</button>
+          </div>
+        </fieldset>
+      </form>
+      <p id="query-error" class="error" role="alert" hidden></p>
+      <div id="load-error" class="error" role="alert" hidden>
+        <p id="load-error-message"></p>
+        <p>Build the WebAssembly module, then serve the repository over HTTP. See <a href="../docs/wasm.md">setup instructions</a>.</p>
+        <button id="reload" type="button">Reload demo</button>
+      </div>
+      <noscript><p class="error">Enable JavaScript to run the search engine. The query guide below is still available.</p></noscript>
+    </section>
+
+    <div class="workspace">
+      <section class="results" aria-labelledby="results-title">
+        <div class="section-heading">
+          <h2 id="results-title">Search results</h2>
+          <span class="section-note">Ranked by TF-IDF</span>
+        </div>
+        <p id="results-summary" class="summary" aria-live="polite">Results will appear when the engine is ready.</p>
+        <div id="suggestions" class="suggestions" hidden></div>
+        <ol id="result-list" class="result-list"></ol>
+      </section>
+
+      <aside class="sidebar">
+        <section class="guide" aria-labelledby="guide-title">
+          <p class="eyebrow">Query guide</p>
+          <h2 id="guide-title">A few ways to explore</h2>
+          <dl>
+            <div><dt><code>quick brown</code></dt><dd>Both terms, anywhere in a document.</dd></div>
+            <div><dt><code>"quick brown fox"</code></dt><dd>The complete phrase, in order.</dd></div>
+            <div><dt><code>fo*</code></dt><dd>Words beginning with “fo”.</dd></div>
+            <div><dt><code>fox OR secret</code></dt><dd>Either term. Use uppercase AND or OR.</dd></div>
+            <div><dt><code>fox - dog</code></dt><dd>Include fox, exclude dog. Keep spaces around the minus.</dd></div>
+          </dl>
+          <details><summary>Grammar and ranking details</summary>
+            <p>Boolean operations run left to right. Parentheses and mixed phrase/prefix expressions are unsupported. Lowercase “and” and “or” are ordinary terms.</p>
+            <p>Scores sum normalised term frequency × smoothed inverse document frequency. They are relative to this collection, not probabilities. Repeated query terms contribute repeatedly.</p>
+            <p>Matched-term counts cover the whole document. Phrase occurrences count complete matches separately. Snippets show up to three merged excerpts.</p>
+            <p>Search is byte-oriented; full Unicode linguistic processing and stemming are not implemented.</p>
+          </details>
+        </section>
+        <section class="collection" aria-labelledby="collection-title">
+          <p class="eyebrow">The collection</p>
+          <h2 id="collection-title">Four small sample documents</h2>
+          <p>Synthetic text bundled with the project. Open a document to inspect the source.</p>
+          <div id="documents"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <footer>Queries run in your browser through the C++ engine. No query submission to a server.<br>
+    Built on the original group project by Brandon Ho, Duy Do and Zixi Khoo; continued by Brandon Ho.</footer>
+</body>
+</html>

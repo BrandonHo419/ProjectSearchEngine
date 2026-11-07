@@ -5,7 +5,7 @@ A C++17 search engine for local text files, with interactive and single-query co
 
 The engine builds an inverted index containing word frequencies and positions. It supports term searches, exact phrases, Boolean operations and prefix matching, then ranks matching documents using TF-IDF.
 
-[Verified demonstration](docs/demo.md) · [Architecture](docs/architecture.md) · [Release notes](RELEASE_NOTES.md)
+[Verified demonstration](docs/demo.md) · [Architecture](docs/architecture.md) · [Release notes](RELEASE_NOTES.md) · [Browser demo setup](docs/wasm.md#run-the-browser-demonstration)
 
 ## Features
 
@@ -16,6 +16,8 @@ The engine builds an inverted index containing word frequencies and positions. I
 - TF-IDF ranking with deterministic ordering for tied scores.
 - Results containing document paths, scores, word counts and snippets.
 - Individual text files or non-recursive directory input.
+- In-memory document loading through the C++ API.
+- Optional WebAssembly build, JavaScript bridge and local browser demonstration.
 - Interactive searches or one query per invocation with documented exit codes.
 - Regression tests for core search behaviour.
 
@@ -273,8 +275,13 @@ repeat the trie lookup.
   formatting. Both interactive and single-query modes use the same renderer.
 
 A future interface can consume the same query response and snippet helper.
-File loading and trie construction remain the caller's responsibility; there
-is no browser adapter or in-memory document-loading API yet.
+Corpus loading and trie construction remain the caller's responsibility.
+`addDocumentText(id, text)` and `buildIndexFromText(documents)` accept in-memory
+text; see the [API example](docs/architecture.md#in-memory-document-loading).
+An optional [WebAssembly bridge](docs/wasm.md) loads document arrays and returns
+plain JavaScript responses. The local `demo/` page uses that engine with the
+bundled samples. See [browser setup](docs/wasm.md#run-the-browser-demonstration);
+no public deployment is included.
 
 ### Explanation details
 
@@ -306,6 +313,11 @@ Ellipses indicate omitted text, including later excerpts beyond the limit.
 | `docs/demo.md` | Reproducible commands and captured output. |
 | `docs/architecture.md` | Data flow, interfaces and design trade-offs. |
 | `RELEASE_NOTES.md` | Unreleased changes and verification status. |
+| `wasm/` | Optional C++ bindings and JavaScript facade. |
+| `demo/` | Local browser UI using the compiled C++ engine. |
+| `tests/browser_tests.html` | Browser regression harness; no extra packages. |
+| `scripts/build_wasm.py` | Pinned optional Emscripten build. |
+| `tests/wasm_tests.mjs` / `tests/wasm_reference.cpp` | Optional JS/Wasm versus native parity checks. |
 | `data/sample/testfile*.txt` | Sample documents. |
 | `data/sample/extreme secret.txt` | Additional synthetic sample document. |
 
@@ -336,6 +348,8 @@ The checks cover:
 - Phrase occurrences, overlapping phrases and document-edge snippets.
 - Merged snippet windows, excerpt limits and invalid snippet spans.
 - Repeated document indexing and rebuilding the index.
+- File/text loading equivalence, duplicate IDs, empty text, invalid IDs and
+  corpus replacement.
 - CLI completion when redirected input ends.
 
 Successful completion prints `Search regression checks passed.` The suite uses
@@ -368,7 +382,7 @@ make clean
 ## Planned improvements
 
 - Add reproducible performance benchmarks.
-- Create an interactive browser demonstration.
+- Publish the browser demonstration after deployment review.
 
 ## Project background and contributions
 

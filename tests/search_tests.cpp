@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <stdexcept>
 #ifndef _WIN32
 #include <sys/wait.h>
 #endif
@@ -246,6 +247,117 @@ int main() {
          "one two three four five six seven eight nine ten");
   assert(edgeIndex.getSnippetFromSpans(edges, {{0, 1}}, 2147483647) ==
          "one two three four five six seven eight nine ten");
+
+  // Identical identifiers and text must yield the same complete response,
+  // whether the content came from disk or from a caller-owned string.
+  const std::vector<TextDocument> documents = {
+      {"tests/tmp/memory-a.txt", "Quick, brown FOX fox foxes don't test-case 123\r\n a a a"},
+      {"tests/tmp/memory-b.txt", "quick\tbrown dog brown fox !!!"},
+      {"tests/tmp/memory-empty.txt", ""},
+      {"tests/tmp/memory-punctuation.txt", "!!! ... \t\r\n"}};
+  std::vector<std::string> documentPaths;
+  for (const auto& document : documents) {
+    std::ofstream(document.id, std::ios::binary) << document.text;
+    documentPaths.push_back(document.id);
+  }
+  Indexer fileIndex, textIndex;
+  fileIndex.buildIndex(documentPaths);
+  textIndex.buildIndexFromText(documents);
+  const auto makeTrie = [](Indexer& source) {
+    PrefixSearcher result;
+    for (const auto& [word, postings] : source.getIndex())
+      for (const auto& [doc, data] : postings) result.insert(word, {doc, data.first});
+    return result;
+  };
+  auto fileTrie = makeTrie(fileIndex);
+  auto textTrie = makeTrie(textIndex);
+  assert(fileIndex.getIndex() == textIndex.getIndex());
+  assert(fileIndex.getDocLen() == textIndex.getDocLen());
+  assert(fileIndex.getDocContent() == textIndex.getDocContent());
+  assert(textIndex.getTotalDoc() == 4);
+  for (const std::string query : {"fox", "FOX", "fo*", "12*", "don't", "test-*",
+                                 "quick brown", "fox OR dog", "fox - dog", "fox FOX",
+                                 "\"quick brown fox\"", "\"a a\"", "unfindable*",
+                                 "unfindableterm", "fox AND", "*", ""}) {
+    for (int limit : {10, 1, 0, -1}) {
+      const auto disk = executeQuery(query, fileIndex, fileTrie, limit);
+      const auto memory = executeQuery(query, textIndex, textTrie, limit);
+      assert(disk.error == memory.error && disk.message == memory.message);
+      assert(disk.suggestions == memory.suggestions);
+      assert(disk.results.size() == memory.results.size());
+      for (std::size_t i = 0; i < disk.results.size(); ++i) {
+        const auto& left = disk.results[i];
+        const auto& right = memory.results[i];
+        assert(left.document == right.document);
+        assert(std::abs(left.score - right.score) < 1e-12);
+        assert(left.isPhrase == right.isPhrase);
+        assert(left.phraseOccurrences == right.phraseOccurrences);
+        assert(left.matches.size() == right.matches.size());
+        for (std::size_t j = 0; j < left.matches.size(); ++j) {
+          assert(left.matches[j].term == right.matches[j].term);
+          assert(left.matches[j].frequency == right.matches[j].frequency);
+          assert(left.matches[j].positions == right.matches[j].positions);
+        }
+        assert(left.spans.size() == right.spans.size());
+        for (std::size_t j = 0; j < left.spans.size(); ++j) {
+          assert(left.spans[j].start == right.spans[j].start);
+          assert(left.spans[j].end == right.spans[j].end);
+        }
+        assert(fileIndex.getSnippetFromSpans(left.document, left.spans) ==
+               textIndex.getSnippetFromSpans(right.document, right.spans));
+      }
+    }
+  }
+
+  Indexer virtualIndex;
+  virtualIndex.buildIndexFromText({{"virtual:one", "obsolete fox fox"},
+                                  {"virtual:two", "fox"},
+                                  {"virtual:one", "replacement dog dog"}});
+  assert(virtualIndex.getTotalDoc() == 2);
+  assert(virtualIndex.searchWord("obsolete").empty());
+  assert(virtualIndex.searchWord("fox").count("virtual:one") == 0);
+  assert((virtualIndex.searchWord("dog").at("virtual:one").second == std::vector<int>{1, 2}));
+  assert(virtualIndex.getDocLen().at("virtual:one") == 3);
+  auto rebuiltTrie = makeTrie(virtualIndex);
+  assert(executeQuery("obs*", virtualIndex, rebuiltTrie, 10).suggestions.empty());
+  assert(executeQuery("do*", virtualIndex, rebuiltTrie, 10).results.size() == 1);
+  virtualIndex.addDocumentText("virtual:one", "");
+  assert(virtualIndex.getTotalDoc() == 2);
+  assert(virtualIndex.getDocLen().at("virtual:one") == 0);
+  assert(virtualIndex.getDocContent().at("virtual:one").empty());
+  assert(virtualIndex.searchWord("dog").empty());
+  virtualIndex.addDocumentText("Virtual:two", "case distinct");
+  assert(virtualIndex.getTotalDoc() == 3);
+  // Invalid IDs must not partially clear or replace a valid corpus.
+  const auto beforeInvalid = virtualIndex.getIndex();
+  const auto lengthsBeforeInvalid = virtualIndex.getDocLen();
+  const auto contentBeforeInvalid = virtualIndex.getDocContent();
+  bool rejected = false;
+  try { virtualIndex.addDocumentText("", "invalid"); }
+  catch (const std::invalid_argument&) { rejected = true; }
+  assert(rejected);
+  rejected = false;
+  try { virtualIndex.buildIndexFromText({{"valid", "new text"}, {"", "invalid"}}); }
+  catch (const std::invalid_argument&) { rejected = true; }
+  assert(rejected);
+  assert(virtualIndex.getIndex() == beforeInvalid);
+  assert(virtualIndex.getDocLen() == lengthsBeforeInvalid);
+  assert(virtualIndex.getDocContent() == contentBeforeInvalid);
+  virtualIndex.buildIndexFromText({});
+  assert(virtualIndex.getTotalDoc() == 0 && virtualIndex.getIndex().empty());
+  assert(virtualIndex.getDocContent().empty());
+  // Existing file loading can still replace a text-loaded document and vice versa.
+  virtualIndex.addDocumentText(a, "temporary");
+  virtualIndex.addDocument(a);
+  assert(virtualIndex.searchWord("temporary").empty());
+  assert(virtualIndex.searchWord("fox").at(a).first == 2);
+  virtualIndex.addDocumentText(a, "memory replacement");
+  assert(virtualIndex.searchWord("fox").empty());
+  assert(virtualIndex.getTotalDoc() == 1);
+  virtualIndex.buildIndex({c});
+  assert(virtualIndex.searchWord("memory").empty());
+  assert(virtualIndex.getTotalDoc() == 1);
+  assert(virtualIndex.searchWord("dog").at(c).first == 2);
 
   index.buildIndex({c});
   assert(index.getTotalDoc() == 1);

@@ -1,6 +1,7 @@
 #ifndef INDEX_H
 #define INDEX_H
 
+#include <iosfwd>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -11,6 +12,11 @@ struct MatchSpan {
     int end;
 };
 
+struct TextDocument {
+    std::string id;
+    std::string text;
+};
+
 class Indexer {
 private:
     std::unordered_map<std::string, std::unordered_map<std::string, std::pair<int, std::vector<int>>>> invertedIndex;
@@ -18,10 +24,16 @@ private:
 
      std::unordered_map<std::string, std::string> docContent;
 
+    void clearIndex();
+    void indexDocument(const std::string& documentId, std::istream& input);
+
 public:
     std::string normalizeWord(const std::string& word) const;
     void addDocument(const std::string& filename);
     void buildIndex(const std::vector<std::string>& files);
+    // Text IDs are opaque labels, not paths. Empty IDs throw std::invalid_argument.
+    void addDocumentText(const std::string& documentId, const std::string& text);
+    void buildIndexFromText(const std::vector<TextDocument>& documents);
     std::unordered_map<std::string, std::pair<int, std::vector<int>>> searchWord(const std::string& word) const;
     
     
