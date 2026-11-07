@@ -17,8 +17,15 @@ let sequence = 0;
 const deadline = Date.now() + 60000;
 async function waitFor(fn) {
   while (Date.now() < deadline) {
-    const result = await fn();
-    if (result) return result;
+    try {
+      const result = await fn();
+      if (result) return result;
+    } catch (error) {
+      // Navigation can destroy the current evaluation context between polls.
+      if (!['Inspected target navigated or closed',
+            'Execution context was destroyed.',
+            'Cannot find context with specified id'].includes(error.message)) throw error;
+    }
     await delay(100);
   }
   throw new Error('Browser checks timed out.');
