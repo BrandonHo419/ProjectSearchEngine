@@ -13,6 +13,10 @@ snippets explaining each match. Prefix searches use a trie to find matching word
 The browser demo runs the same C++ engine through WebAssembly. It searches four
 sample documents locally in your browser.
 
+The demo can also search local TXT, Markdown, CSV, JSON, HTML, XML, PDF and DOCX
+files. File contents stay in the browser. Scanned documents need OCR and are not
+supported. Use **Restore sample documents** to return to the bundled collection.
+
 ## Search examples
 
 | Query | Finds |
@@ -60,9 +64,11 @@ Linux: `make test`.
 
 ## Browser build
 
-Activate Emscripten **4.0.10**, then run:
+Activate Emscripten **4.0.10** and use Node.js 24, then run:
 
 ```text
+npm ci --ignore-scripts --omit=optional
+npm run prepare:parsers
 python scripts/build_wasm.py
 node tests/wasm_tests.mjs
 python -m http.server 8000 --bind 127.0.0.1
@@ -75,3 +81,6 @@ Generated WebAssembly files are ignored by Git; GitHub Actions builds them for d
 
 I keep detailed technical notes, benchmark results and project history on the
 [development branch](https://github.com/BrandonHo419/ProjectSearchEngine/tree/development).
+
+Document extraction uses pinned PDF.js and Mammoth builds served with the demo.
+Their licence files are included in the generated parser assets.
