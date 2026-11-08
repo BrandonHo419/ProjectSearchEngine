@@ -1,3 +1,4 @@
+import { readDocuments } from './file-import.mjs';
 const byId = id => document.getElementById(id);
 const input = byId('query');
 const controls = byId('search-controls');
@@ -10,6 +11,8 @@ const sampleNames = ['testfile1.txt', 'testfile2.txt', 'testfile3.txt', 'extreme
 const controller = new AbortController();
 let engine;
 let closed = false;
+let sampleDocuments = [];
+let importController;
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -28,6 +31,7 @@ function clearResults() {
 
 function unavailable(message) {
   controls.disabled = true;
+  byId('import-controls').disabled = true;
   status.dataset.state = 'error';
   status.textContent = 'Search engine unavailable';
   byId('load-error-message').textContent = message;
@@ -120,8 +124,62 @@ window.addEventListener('pagehide', event => {
   if (event.persisted) return;
   closed = true;
   controller.abort();
+  importController?.abort();
   engine?.dispose();
   engine = undefined;
+});
+
+function installDocuments(documents, samples) {
+  const count = engine.loadDocuments(documents);
+  byId('documents').replaceChildren();
+  for (const doc of documents) {
+    const details = element('details');
+    details.append(element('summary', '', doc.id.split('/').at(-1)),
+      element('pre', 'document-text', doc.text));
+    byId('documents').append(details);
+  }
+  byId('collection-title').textContent = samples ? 'Four small sample documents' : `${count} local documents`;
+  byId('collection-description').textContent = samples ? 'Synthetic text bundled with the project. Open a document to inspect the source.' : 'Extracted text from your files. Files stay in this browser until you restore samples or reload.';
+  byId('sample-examples').hidden = !samples;
+  status.dataset.state = 'ready';
+  status.textContent = `Engine ready · ${count} documents · searches stay in this browser`;
+  controls.disabled = false;
+  runSearch();
+}
+
+byId('local-files').addEventListener('change', async event => {
+  const files = [...event.target.files];
+  if (!files.length) return;
+  importController = new AbortController();
+  byId('import-controls').disabled = true;
+  controls.disabled = true;
+  byId('import-error').hidden = true;
+  byId('import-controls').setAttribute('aria-busy', 'true');
+  try {
+    const documents = await readDocuments(files, { signal: importController.signal,
+      progress: message => { byId('import-status').textContent = message; } });
+    if (closed) return;
+    installDocuments(documents, false);
+    byId('import-status').textContent = `Loaded ${documents.length} files locally.`;
+  } catch (error) {
+    if (closed) return;
+    byId('import-error').textContent = `${error.message} Your previous collection is still available.`;
+    byId('import-error').hidden = false;
+    byId('import-status').textContent = 'Import failed.';
+  } finally {
+    if (!closed && engine) {
+      controls.disabled = false;
+      byId('import-controls').disabled = false;
+      byId('import-controls').removeAttribute('aria-busy');
+      event.target.value = '';
+    }
+    importController = undefined;
+  }
+});
+byId('restore-samples').addEventListener('click', () => {
+  installDocuments(sampleDocuments, true);
+  byId('import-error').hidden = true;
+  byId('import-status').textContent = 'Sample collection restored.';
 });
 
 async function initialise() {
@@ -142,17 +200,9 @@ async function initialise() {
       return { id: `data/sample/${name}`, text: await response.text() };
     }));
     if (closed) return;
-    const count = engine.loadDocuments(documents);
-    for (const doc of documents) {
-      const details = element('details');
-      details.append(element('summary', '', doc.id.split('/').at(-1)),
-        element('pre', 'document-text', doc.text));
-      byId('documents').append(details);
-    }
-    status.dataset.state = 'ready';
-    status.textContent = `Engine ready · ${count} documents · searches stay in this browser`;
-    controls.disabled = false;
-    runSearch();
+    sampleDocuments = documents;
+    installDocuments(documents, true);
+    byId('import-controls').disabled = false;
   } catch (error) {
     controller.abort();
     engine?.dispose();

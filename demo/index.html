@@ -23,17 +23,17 @@
       <p id="engine-status" class="engine-status" role="status" data-state="loading">Loading the search engine…</p>
     </section>
 
-    <section class="search-panel" aria-label="Search the sample collection">
+    <section class="search-panel" aria-label="Search the collection">
       <form id="search-form">
         <fieldset id="search-controls" disabled>
           <legend class="sr-only">Search controls</legend>
-          <label for="query">Search the sample collection</label>
+          <label for="query">Search the collection</label>
           <div class="search-row">
             <input id="query" name="query" type="text" value="fo*" autocomplete="off" spellcheck="false" maxlength="1024" aria-describedby="query-hint">
             <button class="primary" type="submit">Search <span aria-hidden="true">→</span></button>
           </div>
           <p id="query-hint" class="hint">Try a word, a quoted phrase, or a prefix ending in *. Up to 1,024 characters.</p>
-          <div class="examples" aria-label="Example queries">
+          <div id="sample-examples" class="examples" aria-label="Example queries">
             <span>Try:</span>
             <button type="button" data-query="fox">fox</button>
             <button type="button" data-query='"quick brown fox"'>"quick brown fox"</button>
@@ -46,10 +46,24 @@
       <p id="query-error" class="error" role="alert" hidden></p>
       <div id="load-error" class="error" role="alert" hidden>
         <p id="load-error-message"></p>
-        <p>Build the WebAssembly module, then serve the repository over HTTP. See <a href="../docs/wasm.md">setup instructions</a>.</p>
+        <p>Build the WebAssembly module, then serve the repository over HTTP. See <a href="https://github.com/BrandonHo419/ProjectSearchEngine#browser-build">setup instructions</a>.</p>
         <button id="reload" type="button">Reload demo</button>
       </div>
       <noscript><p class="error">Enable JavaScript to run the search engine. The query guide below is still available.</p></noscript>
+    </section>
+
+    <section class="import-panel" aria-label="Use your own files">
+      <h2>Search your own files</h2>
+      <p>Files are read locally and never uploaded. Choose TXT, Markdown, CSV, JSON, HTML, XML, PDF or DOCX.</p>
+      <fieldset id="import-controls" disabled>
+        <legend class="sr-only">File import controls</legend>
+        <label for="local-files">Choose files</label>
+        <input id="local-files" type="file" multiple accept=".txt,.md,.markdown,.csv,.json,.html,.htm,.xml,.pdf,.docx" aria-describedby="file-limits">
+        <button id="restore-samples" type="button">Restore sample documents</button>
+      </fieldset>
+      <p id="file-limits" class="hint">Up to 20 files, 1 MiB combined, 200,000 extracted characters and 20,000 words. PDFs: up to 100 pages. UTF-8 text only. Scans/images, password-protected PDFs and older .doc files are unsupported.</p>
+      <p id="import-status" role="status" aria-live="polite"></p>
+      <p id="import-error" class="error" role="alert" hidden></p>
     </section>
 
     <div class="workspace">
@@ -84,7 +98,7 @@
         <section class="collection" aria-labelledby="collection-title">
           <p class="eyebrow">The collection</p>
           <h2 id="collection-title">Four small sample documents</h2>
-          <p>Synthetic text bundled with the project. Open a document to inspect the source.</p>
+          <p id="collection-description">Synthetic text bundled with the project. Open a document to inspect the source.</p>
           <div id="documents"></div>
         </section>
       </aside>

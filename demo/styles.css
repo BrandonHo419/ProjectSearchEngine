@@ -82,3 +82,8 @@ details p, .collection > p { font-size: 12px; line-height: 1.65; color: var(--mu
 footer { border-top: 1px solid var(--line); padding: 23px 0 30px; color: var(--muted); font-size: 11px; line-height: 1.9; }
 @media (max-width: 850px) { .workspace { grid-template-columns: 1fr; } .sidebar { border-left: 0; padding-left: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; } .collection { margin: 0; border-top: 0; padding-top: 0; } }
 @media (max-width: 560px) { .site-header, main, footer { width: calc(100% - 32px); } .site-header { min-height: 72px; gap: 12px; } .brand { font-size: 13px; } .brand-mark { width: 26px; height: 26px; } .source-link { font-size: 11px; } .intro { padding-top: 32px; } .search-panel { padding: 17px; } .primary { padding-inline: 15px; } .primary span { display: none; } .sidebar { grid-template-columns: 1fr; } .result { padding: 17px; } .section-note { font-size: 10px; } .result-heading { flex-wrap: wrap; } }
+
+.import-panel { margin: 0 0 2rem; padding: 1.5rem; border: 1px solid #c8d2dc; border-radius: 12px; }
+.import-panel fieldset { border: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; min-width: 0; }
+.import-panel input { max-width: 100%; min-width: 0; }
+.import-panel p { overflow-wrap: anywhere; }

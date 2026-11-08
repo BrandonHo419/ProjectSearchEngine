@@ -385,11 +385,6 @@ make clean
 - Extend performance coverage to larger vocabularies and measure peak memory.
 - Consider a larger user-supplied corpus only after defining resource limits.
 
-## Project background and contributions
-
-This project builds on a university group search engine developed by
-Brandon Ho, Duy Do and Zixi Khoo.
-
 Project Search Engine continues that foundation as a portfolio project.
 Brandon Ho's subsequent development includes prefix-trie repairs, regression
 coverage, structured results and match-based snippets, query diagnostics,
@@ -408,3 +403,9 @@ GCC and Python 3 available. The optional runner builds in a temporary directory,
 checks its deterministic fixtures and records raw timings, environment and
 source fingerprints. It does not change the native/WASM build or CI.
 See [workloads, measurement scope and baseline results](docs/performance.md).
+
+## Search local documents in the browser
+
+The demo accepts TXT, Markdown, CSV, JSON, HTML, XML, PDF and DOCX files locally.
+Run `npm ci --ignore-scripts --omit=optional` and `npm run prepare:parsers` before
+building or serving the demo. See [import setup and limits](docs/file-import.md).

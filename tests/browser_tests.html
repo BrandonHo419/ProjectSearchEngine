@@ -88,6 +88,61 @@
           });
         }
       } finally { engine.dispose(); }
+      const bytes = value => Uint8Array.from(atob(value), c => c.charCodeAt(0));
+      const fixtureFiles = [
+        new File(['nebula plain'], 'same.txt'), new File(['nebula second'], 'same.txt'),
+        new File(['# nebula'], 'note.md'), new File(['name,value\nnebula,42'], 'table.csv'),
+        new File(['{"name":"nebula"}'], 'data.json'),
+        new File(['<p>nebula</p><p>document</p><script>forbidden()</scr' + 'ipt><img src="https://example.invalid/tracker">'], 'page.html'),
+        new File(['<root><item>nebula</item></root>'], 'data.xml'),
+        new File([bytes('JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNDYgPj4Kc3RyZWFtCkJUIC9GMSAxMiBUZiA3MiA3MjAgVGQgKG5lYnVsYSBkb2N1bWVudCkgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQwNwolJUVPRgo=')], 'paper.pdf'),
+        new File([bytes('UEsDBBQAAAAIAAxQaF2sbhJangAAANwAAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbF2PsQ7CMBBDf6XKitqrGBhQ24UdGPiBU3JtI5pLlBwF/p4EpA6Mlu1nubu9A6Xq5RZOvZpFwhEg6ZkcpsYH4uyMPjqULOMEAfUdJ4J92x5AexZiqaUw1NBdVorRGqquGOWMjnoFTx8NGK8fLiebTFPV6Vcry73CEBarUaxnWNn8bdZ+HK2mrV9oIXpNKVme3NJsjkPLu4KHoYPvqeEDUEsDBBQAAAAIAAxQaF1hey9DiQAAAPIAAAALAAAAX3JlbHMvLnJlbHONzzsOAiEQBuCrEA6ws1pYGKCy2dZ4AQLDIy6PDBj19lJYrMbCcuaffH9GnHHVPZbcQqyNPdKam+Sh93oEaCZg0m0qFfNIXKGk+xjJQ9Xmqj3Cfp4PQFuDK7E12WIlp8XuOLs8K/5jF+eiwVMxt4S5/6j4uhiyJo9d8nshC/a9ngbLQQn4eFG9AFBLAwQUAAAACAAMUGhdoOmW3nUAAAChAAAAEQAAAHdvcmQvZG9jdW1lbnQueG1sRc5RCsMwCAbgq5QeYJY97CFkuUuaZG0hajCWrLdf0zH28om/iNpmIocdE+nwxkzVtOe4qhYDUMOa0Ncbl0Tn7MWCXs9WFmgssQiHVOtGC2a4T9MD0G80OtvMzPHotXSko47SvGc//K5Z6GFXLsvldxH+T7kPUEsBAhQDFAAAAAgADFBoXaxuElqeAAAA3AAAABMAAAAAAAAAAAAAAIABAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECFAMUAAAACAAMUGhdYXsvQ4kAAADyAAAACwAAAAAAAAAAAAAAgAHPAAAAX3JlbHMvLnJlbHNQSwECFAMUAAAACAAMUGhdoOmW3nUAAAChAAAAEQAAAAAAAAAAAAAAgAGBAQAAd29yZC9kb2N1bWVudC54bWxQSwUGAAAAAAMAAwC5AAAAJQIAAAAA')], 'paper.docx')
+      ];
+      const { readDocuments, validateFiles } = await import('../demo/file-import.mjs');
+      const parsed = await readDocuments(fixtureFiles);
+      check(parsed.length === 9, 'All supported fixture formats should parse.');
+      check(new Set(parsed.map(item => item.id)).size === 9, 'Duplicate filenames must remain distinct.');
+      check(parsed.every(item => item.text.includes('nebula')), 'Parser lost expected text.');
+      check(!parsed[5].text.includes('forbidden') && parsed[5].text.includes('nebula document'), 'HTML extraction should exclude scripts and separate blocks.');
+      const rejects = async (files, pattern) => {
+        try { await readDocuments(files); } catch (error) { check(pattern.test(error.message), 'Wrong import error: ' + error.message); return; }
+        throw new Error('Invalid file batch was accepted.');
+      };
+      await rejects([new File(['x'], 'old.doc')], /unsupported format/);
+      await rejects([new File([''], 'empty.txt')], /No searchable text/);
+      await rejects([new File([new Uint8Array([255, 254])], 'binary.txt')], /encoded|encoding|decode/i);
+      await rejects([new File(['<root>'], 'bad.xml')], /Invalid XML/);
+      await rejects([new File(['bad'], 'bad.pdf')], /PDF|pdf/i);
+      await rejects([new File(['bad'], 'bad.docx')], /DOCX|bounds|Offset/i);
+      try { validateFiles([{name:'large.txt',size:1048577}]); throw new Error('Size accepted'); }
+      catch (error) { check(error.message.includes('1 MiB'), 'Missing byte cap.'); }
+      await rejects([new File(['{'], 'bad.json')], /JSON|position|property/i);
+      await rejects([new File(['word '.repeat(20001)], 'words.txt')], /20,000/);
+      await rejects([new File(['a'.repeat(200001)], 'long.txt')], /200,000/);
+      await rejects(Array.from({length:21}, () => new File(['text'], 'many.txt')), /20 files/);
+      const abort = new AbortController(); abort.abort();
+      try { await readDocuments([fixtureFiles[0]], {signal:abort.signal}); throw new Error('Abort ignored'); }
+      catch(error) { check(error.message.includes('cancelled'), 'Cancelled import must stop.'); }
+      check(!performance.getEntriesByType('resource').some(entry => entry.name.includes('example.invalid')), 'HTML extraction must not fetch embedded resources.');
+      const select = async files => {
+        const transfer = new frame.contentWindow.DataTransfer();
+        for (const file of files) transfer.items.add(file);
+        doc.querySelector('#local-files').files = transfer.files;
+        doc.querySelector('#local-files').dispatchEvent(new frame.contentWindow.Event('change'));
+        await waitFor(() => !doc.querySelector('#import-controls').disabled);
+      };
+      await select(fixtureFiles);
+      search('nebula');
+      check(cards().length === 9, 'Imported corpus should be searched by the C++ engine.');
+      check(doc.querySelector('#sample-examples').hidden, 'Sample examples should hide for local collections.');
+      await select([new File(['nebula valid'], 'valid.txt'), new File(['bad'], 'bad.pdf')]);
+      check(!doc.querySelector('#import-error').hidden, 'Failed batch should display an error.');
+      search('nebula');
+      check(cards().length === 9, 'Failed batch must preserve the previous corpus.');
+      doc.querySelector('#restore-samples').click();
+      search('fo*');
+      check(cards().length === 3 && !doc.querySelector('#sample-examples').hidden, 'Restore should replace local corpus with samples.');
+      check(doc.querySelector('#documents').children.length === 4, 'Restore must remove uploaded document previews.');
       output.dataset.state = 'passed';
       output.textContent = `Browser regression checks passed (${checks} checks).`;
     } catch (error) {

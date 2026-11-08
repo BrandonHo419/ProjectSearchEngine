@@ -8,3 +8,5 @@
 /wasm/generated/
 /_site/
 __pycache__/
+/node_modules/
+/demo/vendor/

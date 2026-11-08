@@ -1,0 +1,7 @@
+{
+  "name": "project-search-engine-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {"prepare:parsers": "node scripts/prepare_parsers.mjs"},
+  "dependencies": {"pdfjs-dist": "6.5.438", "mammoth": "1.13.0"}
+}

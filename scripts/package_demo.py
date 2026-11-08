@@ -7,6 +7,9 @@ import shutil
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = (
     'demo/index.html', 'demo/styles.css', 'demo/app.mjs',
+    'demo/file-import.mjs', 'demo/parser-worker.js',
+    'demo/vendor/pdf.mjs', 'demo/vendor/pdf.worker.mjs',
+    'demo/vendor/mammoth.browser.js', 'demo/vendor/PDFJS-LICENSE', 'demo/vendor/MAMMOTH-LICENSE',
     'wasm/search-engine.mjs', 'wasm/generated/search-engine.mjs',
     'wasm/generated/search-engine.wasm',
     'data/sample/testfile1.txt', 'data/sample/testfile2.txt',

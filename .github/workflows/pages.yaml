@@ -22,6 +22,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Prepare pinned document parsers
+        run: |
+          npm ci --ignore-scripts --omit=optional
+          npm run prepare:parsers
       - name: Native regression checks
         run: make test
       - name: Install pinned Emscripten SDK
